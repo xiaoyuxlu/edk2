@@ -2,22 +2,14 @@
   This driver is a sample implementation of the Graphics Output Protocol for
   the QEMU (Cirrus Logic 5446) video controller.
 
-  Copyright (c) 2006 - 2010, Intel Corporation. All rights reserved.<BR>
+  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
 
-  This program and the accompanying materials
-  are licensed and made available under the terms and conditions of the BSD License
-  which accompanies this distribution. The full text of the license may be found at
-  http://opensource.org/licenses/bsd-license.php
-
-  THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN "AS IS" BASIS,
-  WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
+  SPDX-License-Identifier: BSD-2-Clause-Patent
 
 **/
 
-#include <IndustryStandard/VmwareSvga.h>
-#include <IndustryStandard/Acpi.h>
 #include "Qemu.h"
-#include "UnalignedIoInternal.h"
+#include <IndustryStandard/Acpi.h>
 
 EFI_DRIVER_BINDING_PROTOCOL gQemuVideoDriverBinding = {
   QemuVideoControllerDriverSupported,
@@ -73,8 +65,8 @@ QEMU_VIDEO_CARD gQemuVideoCardList[] = {
         L"QEMU VirtIO VGA"
     },{
         PCI_CLASS_DISPLAY_VGA,
-        VMWARE_PCI_VENDOR_ID_VMWARE,
-        VMWARE_PCI_DEVICE_ID_VMWARE_SVGA2,
+        0x15ad,
+        0x0405,
         QEMU_VIDEO_VMWARE_SVGA,
         L"QEMU VMWare SVGA"
     },{
@@ -209,6 +201,7 @@ QemuVideoControllerDriverStart (
   PCI_TYPE00                        Pci;
   QEMU_VIDEO_CARD                   *Card;
   EFI_PCI_IO_PROTOCOL               *ChildPciIo;
+  UINT64                            SupportedVgaIo;
 
   OldTpl = gBS->RaiseTPL (TPL_CALLBACK);
 
@@ -264,7 +257,6 @@ QemuVideoControllerDriverStart (
     goto ClosePciIo;
   }
   Private->Variant = Card->Variant;
-  Private->FrameBufferVramBarIndex = PCI_BAR_IDX0;
 
   //
   // IsQxl is based on the detected Card->Variant, which at a later point might
@@ -287,12 +279,31 @@ QemuVideoControllerDriverStart (
   }
 
   //
+  // Get supported PCI attributes
+  //
+  Status = Private->PciIo->Attributes (
+                             Private->PciIo,
+                             EfiPciIoAttributeOperationSupported,
+                             0,
+                             &SupportedVgaIo
+                             );
+  if (EFI_ERROR (Status)) {
+    goto ClosePciIo;
+  }
+
+  SupportedVgaIo &= (UINT64)(EFI_PCI_IO_ATTRIBUTE_VGA_IO | EFI_PCI_IO_ATTRIBUTE_VGA_IO_16);
+  if (SupportedVgaIo == 0) {
+    Status = EFI_UNSUPPORTED;
+    goto ClosePciIo;
+  }
+
+  //
   // Set new PCI attributes
   //
   Status = Private->PciIo->Attributes (
                             Private->PciIo,
                             EfiPciIoAttributeOperationEnable,
-                            EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | EFI_PCI_IO_ATTRIBUTE_VGA_IO,
+                            EFI_PCI_DEVICE_ENABLE | EFI_PCI_IO_ATTRIBUTE_VGA_MEMORY | SupportedVgaIo,
                             NULL
                             );
   if (EFI_ERROR (Status)) {
@@ -326,6 +337,14 @@ QemuVideoControllerDriverStart (
   }
 
   //
+  // VMWare SVGA is handled like Bochs (with port IO only).
+  //
+  if (Private->Variant == QEMU_VIDEO_VMWARE_SVGA) {
+    Private->Variant = QEMU_VIDEO_BOCHS;
+    Private->FrameBufferVramBarIndex = PCI_BAR_IDX1;
+  }
+
+  //
   // Check if accessing the bochs interface works.
   //
   if (Private->Variant == QEMU_VIDEO_BOCHS_MMIO ||
@@ -337,58 +356,6 @@ QemuVideoControllerDriverStart (
       Status = EFI_DEVICE_ERROR;
       goto RestoreAttributes;
     }
-  }
-
-  //
-  // Check if accessing Vmware SVGA interface works
-  //
-  if (Private->Variant == QEMU_VIDEO_VMWARE_SVGA) {
-    EFI_ACPI_ADDRESS_SPACE_DESCRIPTOR *IoDesc;
-    UINT32                            TargetId;
-    UINT32                            SvgaIdRead;
-
-    IoDesc = NULL;
-    Status = Private->PciIo->GetBarAttributes (
-                               Private->PciIo,
-                               PCI_BAR_IDX0,
-                               NULL,
-                               (VOID**) &IoDesc
-                               );
-    if (EFI_ERROR (Status) ||
-        IoDesc->ResType != ACPI_ADDRESS_SPACE_TYPE_IO ||
-        IoDesc->AddrRangeMin > MAX_UINT16 + 1 - (VMWARE_SVGA_VALUE_PORT + 4)) {
-      if (IoDesc != NULL) {
-        FreePool (IoDesc);
-      }
-      Status = EFI_DEVICE_ERROR;
-      goto RestoreAttributes;
-    }
-    Private->VmwareSvgaBasePort = (UINT16) IoDesc->AddrRangeMin;
-    FreePool (IoDesc);
-
-    TargetId = VMWARE_SVGA_ID_2;
-    while (TRUE) {
-      VmwareSvgaWrite (Private, VmwareSvgaRegId, TargetId);
-      SvgaIdRead = VmwareSvgaRead (Private, VmwareSvgaRegId);
-      if ((SvgaIdRead == TargetId) || (TargetId <= VMWARE_SVGA_ID_0)) {
-        break;
-      }
-      TargetId--;
-    }
-
-    if (SvgaIdRead != TargetId) {
-      DEBUG ((
-        DEBUG_ERROR,
-        "QemuVideo: QEMU_VIDEO_VMWARE_SVGA ID mismatch "
-        "(got 0x%x, base address 0x%x)\n",
-        SvgaIdRead,
-        Private->VmwareSvgaBasePort
-        ));
-      Status = EFI_DEVICE_ERROR;
-      goto RestoreAttributes;
-    }
-
-    Private->FrameBufferVramBarIndex = PCI_BAR_IDX1;
   }
 
   //
@@ -445,9 +412,6 @@ QemuVideoControllerDriverStart (
   case QEMU_VIDEO_BOCHS_MMIO:
   case QEMU_VIDEO_BOCHS:
     Status = QemuVideoBochsModeSetup (Private, IsQxl);
-    break;
-  case QEMU_VIDEO_VMWARE_SVGA:
-    Status = QemuVideoVmwareSvgaModeSetup (Private);
     break;
   default:
     ASSERT (FALSE);
@@ -510,9 +474,6 @@ DestructQemuVideoGraphics:
 
 FreeModeData:
   FreePool (Private->ModeData);
-  if (Private->VmwareSvgaModeInfo != NULL) {
-    FreePool (Private->VmwareSvgaModeInfo);
-  }
 
 UninstallGopDevicePath:
   gBS->UninstallProtocolInterface (Private->Handle,
@@ -634,9 +595,6 @@ QemuVideoControllerDriverStop (
         );
 
   FreePool (Private->ModeData);
-  if (Private->VmwareSvgaModeInfo != NULL) {
-    FreePool (Private->VmwareSvgaModeInfo);
-  }
   gBS->UninstallProtocolInterface (Private->Handle,
          &gEfiDevicePathProtocolGuid, Private->GopDevicePath);
   FreePool (Private->GopDevicePath);
@@ -972,38 +930,6 @@ BochsRead (
 }
 
 VOID
-VmwareSvgaWrite (
-  QEMU_VIDEO_PRIVATE_DATA   *Private,
-  UINT16                    Register,
-  UINT32                    Value
-  )
-{
-  UnalignedIoWrite32 (
-    Private->VmwareSvgaBasePort + VMWARE_SVGA_INDEX_PORT,
-    Register
-    );
-  UnalignedIoWrite32 (
-    Private->VmwareSvgaBasePort + VMWARE_SVGA_VALUE_PORT,
-    Value
-    );
-}
-
-UINT32
-VmwareSvgaRead (
-  QEMU_VIDEO_PRIVATE_DATA   *Private,
-  UINT16                    Register
-  )
-{
-  UnalignedIoWrite32 (
-    Private->VmwareSvgaBasePort + VMWARE_SVGA_INDEX_PORT,
-    Register
-    );
-  return UnalignedIoRead32 (
-           Private->VmwareSvgaBasePort + VMWARE_SVGA_VALUE_PORT
-           );
-}
-
-VOID
 VgaOutb (
   QEMU_VIDEO_PRIVATE_DATA  *Private,
   UINTN                    Reg,
@@ -1057,35 +983,6 @@ InitializeBochsGraphicsMode (
   ClearScreen (Private);
 }
 
-VOID
-InitializeVmwareSvgaGraphicsMode (
-  QEMU_VIDEO_PRIVATE_DATA  *Private,
-  QEMU_VIDEO_BOCHS_MODES   *ModeData
-  )
-{
-  UINT32 Capabilities;
-
-  VmwareSvgaWrite (Private, VmwareSvgaRegWidth, ModeData->Width);
-  VmwareSvgaWrite (Private, VmwareSvgaRegHeight, ModeData->Height);
-
-  Capabilities = VmwareSvgaRead (
-                   Private,
-                   VmwareSvgaRegCapabilities
-                   );
-  if ((Capabilities & VMWARE_SVGA_CAP_8BIT_EMULATION) != 0) {
-    VmwareSvgaWrite (
-      Private,
-      VmwareSvgaRegBitsPerPixel,
-      ModeData->ColorDepth
-      );
-  }
-
-  VmwareSvgaWrite (Private, VmwareSvgaRegEnable, 1);
-
-  SetDefaultPalette (Private);
-  ClearScreen (Private);
-}
-
 EFI_STATUS
 EFIAPI
 InitializeQemuVideo (
@@ -1103,19 +1000,6 @@ InitializeQemuVideo (
              &gQemuVideoComponentName,
              &gQemuVideoComponentName2
              );
-  ASSERT_EFI_ERROR (Status);
-
-  //
-  // Install EFI Driver Supported EFI Version Protocol required for
-  // EFI drivers that are on PCI and other plug in cards.
-  //
-  gQemuVideoDriverSupportedEfiVersion.FirmwareVersion = PcdGet32 (PcdDriverSupportedEfiVersion);
-  Status = gBS->InstallMultipleProtocolInterfaces (
-                  &ImageHandle,
-                  &gEfiDriverSupportedEfiVersionProtocolGuid,
-                  &gQemuVideoDriverSupportedEfiVersion,
-                  NULL
-                  );
   ASSERT_EFI_ERROR (Status);
 
   return Status;
