@@ -20,7 +20,6 @@ VOID          *mEfiDevPathNotifyReg;
 EFI_EVENT     mEfiDevPathEvent;
 VOID          *mEmuVariableEventReg;
 EFI_EVENT     mEmuVariableEvent;
-UINT16        mHostBridgeDevId;
 
 //
 // Table of host IRQs matching PCI IRQs A-D
@@ -958,8 +957,7 @@ SetPciIntLine (
     // Final PciHostIrqs[] index calculation depends on the platform
     // and should match SeaBIOS src/fw/pciinit.c *_pci_slot_get_irq()
     //
-    switch (mHostBridgeDevId) {
-      case INTEL_Q35_MCH_DEVICE_ID:
+    {
         //
         // SeaBIOS contains the following comment:
         // "Slots 0-24 rotate slot:pin mapping similar to piix above, but
@@ -975,9 +973,6 @@ SetPciIntLine (
           //
           Idx -= RootSlot;
         }
-        break;
-      default:
-        ASSERT (FALSE); // should never get here
     }
     Idx %= ARRAY_SIZE (PciHostIrqs);
     IrqLine = PciHostIrqs[Idx];
@@ -1030,9 +1025,7 @@ PciAcpiInitialization (
   //
   // Query Host Bridge DID to determine platform type
   //
-  mHostBridgeDevId = PcdGet16 (PcdOvmfHostBridgePciDevId);
-  switch (mHostBridgeDevId) {
-    case INTEL_Q35_MCH_DEVICE_ID:
+  {
       Pmba = POWER_MGMT_REGISTER_Q35 (ICH9_PMBASE);
       //
       // 00:1f.0 LPC Bridge (Q35) LNK routing targets
@@ -1045,12 +1038,6 @@ PciAcpiInitialization (
       PciWrite8 (PCI_LIB_ADDRESS (0, 0x1f, 0, 0x69), 0x0a); // F
       PciWrite8 (PCI_LIB_ADDRESS (0, 0x1f, 0, 0x6a), 0x0b); // G
       PciWrite8 (PCI_LIB_ADDRESS (0, 0x1f, 0, 0x6b), 0x0b); // H
-      break;
-    default:
-      DEBUG ((EFI_D_ERROR, "%a: Unknown Host Bridge Device ID: 0x%04x\n",
-        __FUNCTION__, mHostBridgeDevId));
-      ASSERT (FALSE);
-      return;
   }
 
   //
@@ -1058,6 +1045,7 @@ PciAcpiInitialization (
   //
   VisitAllPciInstances (SetPciIntLine);
 
+  // BUGBUG: Can we move this code earlier to SEC ?
   //
   // Set ACPI SCI_EN bit in PMCNTRL
   //

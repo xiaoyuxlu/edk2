@@ -62,5 +62,4 @@
   gEfiPciIoProtocolGuid                         # PROTOCOL TO_START
 
 [Pcd]
-  gUefiOvmfPkgTokenSpaceGuid.PcdOvmfHostBridgePciDevId
   gEfiMdeModulePkgTokenSpaceGuid.PcdNullPointerDetectionPropertyMask

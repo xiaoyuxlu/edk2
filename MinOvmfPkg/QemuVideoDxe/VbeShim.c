@@ -59,7 +59,6 @@ InstallVbeShim (
   UINTN                Segment0Pages;
   IVT_ENTRY            *Int0x10;
   EFI_STATUS           Segment0AllocationStatus;
-  UINT16               HostBridgeDevId;
   UINTN                Pam1Address;
   UINT8                Pam1;
   UINTN                SegmentCPages;
@@ -143,24 +142,8 @@ InstallVbeShim (
   //
   // Start by determining the address of the PAM1 register.
   //
-  HostBridgeDevId = PcdGet16 (PcdOvmfHostBridgePciDevId);
-  switch (HostBridgeDevId) {
-  case INTEL_Q35_MCH_DEVICE_ID:
+  {
     Pam1Address = DRAMC_REGISTER_Q35 (MCH_PAM1);
-    break;
-  default:
-    DEBUG ((
-      DEBUG_ERROR,
-      "%a: unknown host bridge device ID: 0x%04x\n",
-      __FUNCTION__,
-      HostBridgeDevId
-      ));
-    ASSERT (FALSE);
-
-    if (!EFI_ERROR (Segment0AllocationStatus)) {
-      gBS->FreePages (Segment0, Segment0Pages);
-    }
-    return;
   }
   //
   // low nibble covers 0xC0000 to 0xC3FFF
@@ -168,6 +151,7 @@ InstallVbeShim (
   // bit1 in each nibble is Write Enable
   // bit0 in each nibble is Read Enable
   //
+  // BUGBUG: Use Legacy Region protocol, or remove CSM support.
   Pam1 = PciRead8 (Pam1Address);
   PciWrite8 (Pam1Address, Pam1 | (BIT1 | BIT0));
 
