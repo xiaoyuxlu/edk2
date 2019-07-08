@@ -1,0 +1,138 @@
+## @file
+#  This is core module in DXE phase.
+#
+#  It provides an implementation of DXE Core that is compliant with DXE CIS.
+#
+#  Copyright (c) 2006 - 2019, Intel Corporation. All rights reserved.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = UefiCore
+  FILE_GUID                      = D6A2CB7F-6A18-4e2f-B43B-9920A733700A
+  MODULE_TYPE                    = DXE_CORE
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = DxeMain
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64
+#
+
+[Sources]
+  DxeMain.h
+  Image/Image.c
+  Image/Image.h
+  Misc/Stall.c
+  Misc/SetWatchdogTimer.c
+  Misc/InstallConfigurationTable.c
+  Library/Library.c
+  Hand/DriverSupport.c
+  Hand/Notify.c
+  Hand/Locate.c
+  Hand/Handle.c
+  Hand/Handle.h
+  Mem/Pool.c
+  Mem/Page.c
+  Mem/MemData.c
+  Mem/Imem.h
+  Mem/MemInit.c
+  Event/Tpl.c
+  Event/Timer.c
+  Event/Event.c
+  Event/Event.h
+  DxeMain/DxeProtocolNotify.c
+  DxeMain/DxeMain.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  BaseMemoryLib
+  CacheMaintenanceLib
+  HobLib
+  BaseLib
+  UefiLib
+  DebugLib
+  DxeCoreEntryPoint
+  PeCoffLib
+  PeCoffGetEntryPointLib
+  PeCoffExtraActionLib
+  MemoryAllocationLib
+  UefiBootServicesTableLib
+  DevicePathLib
+  PcdLib
+
+[Guids]
+  gEfiEventMemoryMapChangeGuid                  ## PRODUCES             ## Event
+  gEfiEventVirtualAddressChangeGuid             ## CONSUMES             ## Event
+  ## CONSUMES   ## Event
+  ## PRODUCES   ## Event
+  gEfiEventExitBootServicesGuid
+  gEfiHobMemoryAllocModuleGuid                  ## SOMETIMES_CONSUMES   ## HOB
+  gEfiHobListGuid                               ## PRODUCES             ## SystemTable
+  ## PRODUCES               ## SystemTable
+  ## SOMETIMES_CONSUMES     ## HOB
+  gEfiMemoryTypeInformationGuid
+  gEfiEventDxeDispatchGuid                      ## PRODUCES             ## Event
+  ## PRODUCES   ## Event
+  ## CONSUMES   ## Event
+  gIdleLoopEventGuid
+  gEventExitBootServicesFailedGuid              ## SOMETIMES_PRODUCES   ## Event
+  gEfiEndOfDxeEventGroupGuid                    ## SOMETIMES_CONSUMES   ## Event
+  gEfiHobMemoryAllocStackGuid                   ## SOMETIMES_CONSUMES   ## SystemTable
+  gEfiFileInfoGuid
+
+[Protocols]
+  ## PRODUCES
+  ## SOMETIMES_CONSUMES
+  gEfiSimpleFileSystemProtocolGuid              ## SOMETIMES_CONSUMES
+  gEfiLoadFileProtocolGuid                      ## SOMETIMES_CONSUMES
+  gEfiLoadFile2ProtocolGuid                     ## SOMETIMES_CONSUMES
+  gEfiBusSpecificDriverOverrideProtocolGuid     ## SOMETIMES_CONSUMES
+  gEfiDriverFamilyOverrideProtocolGuid          ## SOMETIMES_CONSUMES
+  gEfiPlatformDriverOverrideProtocolGuid        ## SOMETIMES_CONSUMES
+  gEfiDriverBindingProtocolGuid                 ## SOMETIMES_CONSUMES
+  ## PRODUCES
+  ## CONSUMES
+  gEfiDevicePathProtocolGuid
+  gEfiLoadedImageProtocolGuid                   ## PRODUCES
+  gEfiLoadedImageDevicePathProtocolGuid         ## PRODUCES
+
+  # Arch Protocols
+  gEfiBdsArchProtocolGuid                       ## CONSUMES
+  gEfiCpuArchProtocolGuid                       ## CONSUMES
+  gEfiMetronomeArchProtocolGuid                 ## CONSUMES
+  gEfiMonotonicCounterArchProtocolGuid          ## CONSUMES
+  gEfiRealTimeClockArchProtocolGuid             ## CONSUMES
+  gEfiResetArchProtocolGuid                     ## CONSUMES
+  gEfiRuntimeArchProtocolGuid                   ## CONSUMES
+  gEfiSecurityArchProtocolGuid                  ## CONSUMES
+  gEfiSecurity2ArchProtocolGuid                 ## SOMETIMES_CONSUMES
+  gEfiTimerArchProtocolGuid                     ## CONSUMES
+  gEfiVariableWriteArchProtocolGuid             ## CONSUMES
+  gEfiVariableArchProtocolGuid                  ## CONSUMES
+  gEfiCapsuleArchProtocolGuid                   ## CONSUMES
+  gEfiWatchdogTimerArchProtocolGuid             ## CONSUMES
+
+[Pcd]
+  gEfiMdeModulePkgTokenSpaceGuid.PcdMaxEfiSystemTablePointerAddress         ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdPropertiesTableEnable                   ## CONSUMES
+
+# [Hob]
+# RESOURCE_DESCRIPTOR   ## CONSUMES
+# MEMORY_ALLOCATION     ## CONSUMES
+# FIRMWARE_VOLUME       ## CONSUMES
+# UNDEFINED             ## CONSUMES # CPU
+#
+# [Event]
+# EVENT_TYPE_RELATIVE_TIMER ## PRODUCES  # DxeCore signals timer event.
+# EVENT_TYPE_PERIODIC_TIMER ## PRODUCES  # DxeCore signals timer event.
+#
+
+[UserExtensions.TianoCore."ExtraFiles"]
+  DxeCoreExtra.uni

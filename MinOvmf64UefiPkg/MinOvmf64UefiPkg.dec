@@ -1,0 +1,14 @@
+## @file  MinOvmf64UefiPkg.dec
+#
+# Copyright (c) 2018, Intel Corporation. All rights reserved.<BR>
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  DEC_SPECIFICATION              = 0x00010005
+  PACKAGE_NAME                   = MinOvmf64UefiPkg
+  PACKAGE_GUID                   = 91B64669-2E4E-4644-A752-FF282631D7B9
+  PACKAGE_VERSION                = 0.1
+
+[Includes.common]
