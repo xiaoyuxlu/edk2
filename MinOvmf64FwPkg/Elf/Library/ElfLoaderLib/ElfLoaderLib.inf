@@ -1,0 +1,27 @@
+## @file
+#  ELF Loader Library implementation.
+#
+#  Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = ElfLoaderLib
+  FILE_GUID                      = C29BC51F-DCA2-4DA0-B984-CE14237ADDD8
+  MODULE_TYPE                    = BASE
+  VERSION_STRING                 = 1.0
+  LIBRARY_CLASS                  = ElfLoaderLib
+
+[Sources]
+  ElfLoaderLib.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MinOvmf64FwPkg/MinOvmf64FwPkg.dec
+
+[LibraryClasses]
+  DebugLib
+  BaseMemoryLib

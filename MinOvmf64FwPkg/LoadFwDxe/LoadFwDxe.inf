@@ -1,0 +1,43 @@
+## @file
+#  Sample ACPI Platform Driver
+#
+#  Copyright (c) 2008 - 2018, Intel Corporation. All rights reserved.<BR>
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION                    = 0x00010005
+  BASE_NAME                      = LoadFwDxe
+  FILE_GUID                      = 0D64984E-4A20-4696-A04E-745FBFF19329
+  MODULE_TYPE                    = DXE_DRIVER
+  VERSION_STRING                 = 1.0
+  ENTRY_POINT                    = LoadFwDxeEntryPoint
+
+#
+# The following information is for reference only and not required by the build tools.
+#
+#  VALID_ARCHITECTURES           = IA32 X64 EBC
+#
+
+[Sources]
+  LoadFwDxe.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  MinOvmf64FwPkg/MinOvmf64FwPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  PciLib
+  DebugLib
+  UefiBootServicesTableLib
+  UefiDriverEntryPoint
+  ElfLoaderLib
+
+[Protocols]
+  gEfiFirmwareVolume2ProtocolGuid               ## CONSUMES
+
+[Depex]
+  gEfiPciIoProtocolGuid
