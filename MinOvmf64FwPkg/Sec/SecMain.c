@@ -56,6 +56,8 @@ typedef struct {
   EFI_HOB_GENERIC_HEADER           EndOfHob;
 } HOB_TEMPLATE;
 
+EFI_GUID mHypervisorFwGuid = {0x6948d4a, 0xd359, 0x4721, {0xad, 0xf6, 0x52, 0x25, 0x48, 0x5a, 0x6a, 0x3a}};
+
 UINT8
 EFIAPI
 CmosRead8 (
@@ -231,8 +233,8 @@ PrepareHypervisorFwHOB (
   HypervisorFwBase = Hob->HypervisorFw.AllocDescriptor.MemoryBaseAddress;
   ZeroMem ((VOID *)(UINTN)HypervisorFwBase, EFI_PAGES_TO_SIZE(Pages));
 
-  CopyMem(&Hob->HypervisorFw.AllocDescriptor.Name, &gEfiHobMemoryAllocModuleGuid, sizeof(EFI_GUID));
-  Hob->HypervisorFw.AllocDescriptor.MemoryType = EfiBootServicesData;
+  CopyMem(&Hob->HypervisorFw.AllocDescriptor.Name, &mHypervisorFwGuid, sizeof(EFI_GUID));
+  Hob->HypervisorFw.AllocDescriptor.MemoryType = EfiBootServicesCode;
   ZeroMem (Hob->HypervisorFw.AllocDescriptor.Reserved, sizeof(Hob->HypervisorFw.AllocDescriptor.Reserved));
 
   return HypervisorFwBase; 
@@ -466,8 +468,8 @@ FindAndReportEntryPoints (
 
   *HypervisorFwEntryPoint = 0;
   FirmwareVolumePtr = (VOID *)(UINTN)Hob->FirmwareVolume.BaseAddress;
-  HypervisorFwImageBase = (UINTN)FirmwareVolumePtr;
-  
+  FindHypervisorFwImageBaseInFv (FirmwareVolumePtr, &HypervisorFwImageBase);
+
   if (*(UINT16 *)(UINTN)HypervisorFwImageBase == EFI_IMAGE_DOS_SIGNATURE) {
     DEBUG ((DEBUG_ERROR, "PE FW Image\n"));
     ImageContext.Handle = (VOID *)(UINTN)HypervisorFwImageBase;

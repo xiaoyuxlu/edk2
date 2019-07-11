@@ -66,7 +66,7 @@ NumBlocks     = $(FW_BLOCKS)
 
 $(VARS_SIZE)|$(FVMAIN_SIZE)
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfDxeMemFvSize
-FILE = MinOvmf64FwPkg/hypervisor-fw
+FV = DXEFV
 
 $(SECFV_OFFSET)|$(SECFV_SIZE)
 gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvBase|gUefiOvmfPkgTokenSpaceGuid.PcdOvmfPeiMemFvSize
@@ -127,6 +127,12 @@ READ_STATUS        = TRUE
 READ_LOCK_CAP      = TRUE
 READ_LOCK_STATUS   = TRUE
 
+INF ShellPkg/Application/Shell/Shell.inf
+FILE DXE_CORE = 06948D4A-D359-4721-ADF6-5225485A6A3A {
+  SECTION PE32 = MinOvmf64FwPkg/hypervisor-fw
+  SECTION UI   ="hypervisor-fw"
+}
+
 ################################################################################
 
 ################################################################################
@@ -142,4 +148,10 @@ READ_LOCK_STATUS   = TRUE
   FILE RAW = $(NAMED_GUID) {
     RAW BIN   Align = 16   |.bin
   }
-
+  
+[Rule.Common.UEFI_APPLICATION]
+  FILE APPLICATION = $(NAMED_GUID) {
+    PE32     PE32                    $(INF_OUTPUT)/$(MODULE_NAME).efi
+    UI       STRING="$(MODULE_NAME)" Optional
+    VERSION  STRING="$(INF_VERSION)" Optional BUILD_NUM=$(BUILD_NUMBER)
+  }
