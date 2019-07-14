@@ -127,7 +127,13 @@ READ_STATUS        = TRUE
 READ_LOCK_CAP      = TRUE
 READ_LOCK_STATUS   = TRUE
 
+#INF MdeModulePkg/Application/HelloWorld/HelloWorld.inf
 INF ShellPkg/Application/Shell/Shell.inf
+#FILE APPLICATION = 38C7BA7B-BBFC-4E1A-A5D0-A370592D10B6 {
+#  SECTION PE32 = MinOvmf64FwPkg/bootx64.efi
+#  SECTION UI   ="grub"
+#}
+
 FILE DXE_CORE = 06948D4A-D359-4721-ADF6-5225485A6A3A {
   SECTION PE32 = MinOvmf64FwPkg/hypervisor-fw
   SECTION UI   ="hypervisor-fw"
