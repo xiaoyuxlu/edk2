@@ -36,6 +36,9 @@
   HiiDatabaseDxe/Font.c
   HiiDatabaseDxe/ConfigKeywordHandler.c
 
+  EnglishDxe/UnicodeCollationEng.c
+  EnglishDxe/UnicodeCollationEng.h
+
 [Packages]
   MdePkg/MdePkg.dec
   MdeModulePkg/MdeModulePkg.dec
@@ -64,9 +67,16 @@
   gEfiHiiConfigAccessProtocolGuid                                       ## SOMETIMES_CONSUMES
   gEfiConfigKeywordHandlerProtocolGuid                                  ## PRODUCES
 
+[Protocols]
+  gEfiUnicodeCollationProtocolGuid | gEfiMdeModulePkgTokenSpaceGuid.PcdUnicodeCollationSupport      ## SOMETIMES_PRODUCES
+  gEfiUnicodeCollation2ProtocolGuid | gEfiMdeModulePkgTokenSpaceGuid.PcdUnicodeCollation2Support    ## PRODUCES
+
 [FeaturePcd]
   gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol   ## CONSUMES
   gEfiMdeModulePkgTokenSpaceGuid.PcdHiiOsRuntimeSupport       ## CONSUMES
+
+  gEfiMdeModulePkgTokenSpaceGuid.PcdUnicodeCollationSupport     ## CONSUMES
+  gEfiMdeModulePkgTokenSpaceGuid.PcdUnicodeCollation2Support    ## CONSUMES
 
 [Pcd]
   gEfiMdePkgTokenSpaceGuid.PcdUefiVariableDefaultPlatformLang ## CONSUMES

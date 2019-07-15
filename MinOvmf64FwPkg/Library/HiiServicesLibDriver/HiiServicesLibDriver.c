@@ -52,6 +52,13 @@ EFI_HII_CONFIG_ROUTING_PROTOCOL  *gHiiConfigRouting = &mPrivate.ConfigRouting;
 
 EFI_STATUS
 EFIAPI
+InitializeUnicodeCollationEng (
+  IN EFI_HANDLE       ImageHandle,
+  IN EFI_SYSTEM_TABLE *SystemTable
+  );
+
+EFI_STATUS
+EFIAPI
 InitializeHiiDatabase (
   IN EFI_HANDLE        ImageHandle,
   IN EFI_SYSTEM_TABLE  *SystemTable
@@ -85,6 +92,9 @@ HiiServicesLibDriverConstructor (
   )
 {
   EFI_STATUS Status;
+
+  Status = InitializeUnicodeCollationEng (ImageHandle, SystemTable);
+  ASSERT_EFI_ERROR (Status);
 
   Status = InitializeHiiDatabase (ImageHandle, SystemTable);
   ASSERT_EFI_ERROR (Status);
