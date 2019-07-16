@@ -1610,7 +1610,7 @@ Done:
 **/
 EFI_STATUS
 EFIAPI
-HiiGetString (
+MyHiiGetString (
   IN  CONST EFI_HII_STRING_PROTOCOL   *This,
   IN  CONST CHAR8                     *Language,
   IN  EFI_HII_HANDLE                  PackageList,
@@ -1711,7 +1711,7 @@ HiiGetString (
 **/
 EFI_STATUS
 EFIAPI
-HiiSetString (
+MyHiiSetString (
   IN CONST EFI_HII_STRING_PROTOCOL    *This,
   IN EFI_HII_HANDLE                   PackageList,
   IN EFI_STRING_ID                    StringId,

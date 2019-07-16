@@ -49,8 +49,8 @@ HII_DATABASE_PRIVATE_DATA mPrivate = {
   },
   {
     HiiNewString,
-    HiiGetString,
-    HiiSetString,
+    MyHiiGetString,
+    MyHiiSetString,
     HiiGetLanguages,
     HiiGetSecondaryLanguages
   },

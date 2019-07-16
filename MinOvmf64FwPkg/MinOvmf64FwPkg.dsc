@@ -289,7 +289,6 @@
       UefiHiiServicesLib|MinOvmf64FwPkg/Library/HiiServicesLibDriver/HiiServicesLibDriver.inf
 
     <PcdsFeatureFlag>
-      gEfiShellPkgTokenSpaceGuid.PcdShellRequireHiiPlatform|FALSE
       gEfiMdeModulePkgTokenSpaceGuid.PcdSupportHiiImageProtocol|FALSE
       gEfiMdeModulePkgTokenSpaceGuid.PcdHiiOsRuntimeSupport|FALSE
     <PcdsFixedAtBuild>
