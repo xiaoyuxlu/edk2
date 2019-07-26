@@ -1,0 +1,17 @@
+### @file
+#
+#  Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+###
+
+[Defines]
+  INF_VERSION               = 0x00010017
+  BASE_NAME                 = BaseBmpSupportLibRustRelease
+  FILE_GUID                 = F5A887E5-3150-4E50-B180-BB6B1CDB66DF
+  MODULE_TYPE               = BASE
+  LIBRARY_CLASS             = BmpSupportLib
+
+[Binaries]
+  Library|target/release/base_bmp_support_lib_rust.lib
