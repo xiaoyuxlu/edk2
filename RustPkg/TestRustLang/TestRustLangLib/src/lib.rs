@@ -14,6 +14,11 @@
 
 #![crate_type = "staticlib"]
 
+#![feature(alloc_layout_extra)]
+#![feature(allocator_api)]
+#![feature(alloc_error_handler)]
+#![feature(asm)]
+
 #![cfg_attr(not(test), no_std)]
 
 #![allow(unused)]
@@ -43,14 +48,14 @@ use core::slice::from_raw_parts;
 #[panic_handler]
 #[allow(clippy::empty_loop)]
 fn panic(_info: &PanicInfo) -> ! {
-    unsafe {DebugPrint (0x80000000, b"Panic ...\n" as *const u8, 0);};
+    unsafe {DebugPrint (0x80000000, b"panic ...\n\0" as *const u8, 0);};
+    unsafe { asm!("int3"); }
     loop {}
 }
 
 #[no_mangle]
 #[export_name = "TestIntegerOverflow"]
 pub extern "win64" fn test_integer_overflow (
-    buffer: *const c_void,
     buffer_size: usize,
     width : u32,
     height : u32,
@@ -147,7 +152,7 @@ pub extern "win64" fn test_buffer_overflow_fixed (
       );
 }
 
-pub fn get_buffer<'a> () -> Option<&'a mut TestTableFixed>
+fn get_buffer<'a> () -> Option<&'a mut TestTableFixed>
 {
     let ptr : *mut c_void = unsafe { AllocatePool (size_of::<TestTableFixed>()) };
     if ptr.is_null() {
@@ -157,7 +162,7 @@ pub fn get_buffer<'a> () -> Option<&'a mut TestTableFixed>
     Some(buffer)
 }
 
-pub fn release_buffer (test_table : &mut TestTableFixed)
+fn release_buffer (test_table : &mut TestTableFixed)
 {
   test_table.r#type = 0;
   unsafe { FreePool (test_table as *mut TestTableFixed as *mut c_void) ; }
@@ -193,4 +198,111 @@ pub extern "win64" fn test_buffer_borrow (
     test_table3[63] = 0;
 
     //test_table2.r#type = 2; // error
+}
+
+use core::alloc::{GlobalAlloc, Layout, Alloc};
+
+pub struct MyAllocator;
+
+unsafe impl GlobalAlloc for MyAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+      unsafe {DebugPrint (0x80000000, b"alloc ...\n\0" as *const u8, 0);};
+      let size = layout.size();
+      let align = layout.align();
+      if align > 8 {
+        return core::ptr::null_mut();
+      }
+      if size >= 0x800 {
+        return core::ptr::null_mut(); // BUGBUG test only.
+      }
+
+      unsafe { AllocatePool (size) as *mut u8 }
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+      unsafe {DebugPrint (0x80000000, b"dealloc ...\n\0" as *const u8, 0);};
+      unsafe { FreePool (ptr as *mut c_void); }
+    }
+}
+
+#[global_allocator]
+static ALLOCATOR: MyAllocator = MyAllocator;
+
+#[no_mangle]
+#[export_name = "TestBufferAlloc"]
+pub extern "win64" fn test_buffer_alloc (
+    
+    )
+{
+    let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(32, 4) };
+    let buffer = unsafe { ALLOCATOR.alloc (layout) };
+    unsafe {*buffer = 1 };
+    unsafe { ALLOCATOR.dealloc (buffer, layout) };
+    unsafe {*buffer = 1 }; // cannot catch
+
+    let layout = core::alloc::Layout::new::<u32>();
+    let buffer = unsafe { ALLOCATOR.alloc(layout) };
+    unsafe { ALLOCATOR.dealloc (buffer, layout) };
+}
+
+extern crate alloc;
+
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: core::alloc::Layout) -> !
+{
+    unsafe {DebugPrint (0x80000000, b"alloc_error_handler 0x%x\n\0" as *const u8, layout.size());};
+    unsafe { asm!("int3"); }
+    loop {}
+}
+
+fn get_box (
+    r#type: u32
+    ) -> Box<TestTableFixed>
+{
+    let mut a = Box::new(TestTableFixed{
+                       r#type: 0,
+                       length: size_of::<TestTableFixed>() as u32,
+                       value: [0; 64]
+                       }); // it will call __rust_alloc().
+    a.r#type = r#type;
+
+    a
+}
+
+#[no_mangle]
+#[export_name = "TestBoxAlloc"]
+pub extern "win64" fn test_box_alloc (
+    r#type: u32
+    ) -> Box<TestTableFixed>
+{
+  let mut a = get_box(1);
+
+  a.r#type = r#type;
+
+  //test_box_free(a); // build fail.
+
+  let b = a;
+  b
+}
+
+#[no_mangle]
+#[export_name = "TestBoxFree"]
+pub extern "win64" fn test_box_free (
+    buffer: Box<TestTableFixed>
+    )
+{
+  // it will call __rust_dealloc()
+}
+
+#[no_mangle]
+#[export_name = "TestBoxAllocFail"]
+pub extern "win64" fn test_box_alloc_fail (
+    size: u32
+    ) -> Box<[u8; 0x800]>
+{
+    let mut a = Box::new([0_u8; 0x800]); // it will call __rust_alloc().
+
+    a
 }

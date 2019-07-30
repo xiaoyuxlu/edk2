@@ -178,8 +178,16 @@
     MSFT:RELEASE_*_*_CC_FLAGS = /GL-
   }
 
-  RustPkg/Test/TestBmpApp/TestBmpApp.inf {
+  RustPkg/Test/TestBmpApp/TestBmpApp.inf
+
+  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf {
   <LibraryClasses>
+!if $(TARGET) == RELEASE
+    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibRelease.inf
+!else
+    #TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibDebug.inf
+    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibRelease.inf
+!endif
   }
 
 
