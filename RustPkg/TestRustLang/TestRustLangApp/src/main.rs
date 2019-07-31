@@ -1,0 +1,124 @@
+// Copyright (c) 2019 Intel Corporation
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+
+#![crate_type = "staticlib"]
+
+#![feature(alloc_layout_extra)]
+#![feature(allocator_api)]
+#![feature(alloc_error_handler)]
+#![feature(core_panic_info)]
+#![feature(asm)]
+
+#![cfg_attr(not(test), no_std)]
+#![no_main]
+
+#![allow(unused)]
+
+mod mem;
+
+use r_efi::efi;
+use r_efi::efi::{Status};
+
+use core::panic::PanicInfo;
+use core::ffi::c_void;
+
+use core::mem::size_of;
+use core::mem::transmute;
+
+use core::slice::from_raw_parts;
+
+#[panic_handler]
+#[allow(clippy::empty_loop)]
+fn panic(_info: &PanicInfo) -> ! {
+    unsafe { asm!("int3"); }
+    loop {}
+}
+
+use core::alloc::{GlobalAlloc, Layout, Alloc};
+
+pub struct MyAllocator;
+
+pub static mut ST : *mut efi::SystemTable = core::ptr::null_mut();
+pub static mut BS : *mut efi::BootServices = core::ptr::null_mut();
+
+unsafe impl GlobalAlloc for MyAllocator {
+    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
+      let size = layout.size();
+      let align = layout.align();
+      if align > 8 {
+        return core::ptr::null_mut();
+      }
+
+      let mut address : *mut c_void = core::ptr::null_mut();
+      let allocate_pool : extern "win64" fn(
+        efi::MemoryType,
+        usize,
+        *mut *mut core::ffi::c_void,
+        ) -> efi::Status = (*BS).allocate_pool;
+      let status = allocate_pool (
+                     efi::MemoryType::BootServicesData,
+                     size,
+                     &mut address as *mut *mut c_void
+                     );
+      if status != Status::SUCCESS {
+        return core::ptr::null_mut();
+      }
+      address as *mut u8
+    }
+    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
+      let free_pool : extern "win64" fn(
+        *mut core::ffi::c_void,
+        ) -> efi::Status = (*BS).free_pool;
+      free_pool (ptr as *mut c_void);
+    }
+}
+
+#[global_allocator]
+static ALLOCATOR: MyAllocator = MyAllocator;
+
+extern crate alloc;
+
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+
+#[alloc_error_handler]
+fn alloc_error_handler(layout: core::alloc::Layout) -> !
+{
+    unsafe { asm!("int3"); }
+    loop {}
+}
+
+#[no_mangle]
+pub extern "C" fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTable) -> Status
+{
+    unsafe {
+      ST = system_table;
+      BS = (*ST).boot_services;
+    }
+
+    // L"Hello World!/r/n"
+    let mut string_name: [efi::Char16; 14] = [
+      0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21, 0x0A, 0x0D
+      ];
+    let output_string : extern "win64" fn(
+        *mut efi::protocols::simple_text_output::Protocol,
+        *mut efi::Char16,
+        ) -> efi::Status = unsafe { (*((*ST).con_out)).output_string };
+    output_string (
+        unsafe {(*ST).con_out},
+        &mut string_name as *mut [efi::Char16; 14] as *mut efi::Char16,
+        );
+
+    Status::SUCCESS
+}

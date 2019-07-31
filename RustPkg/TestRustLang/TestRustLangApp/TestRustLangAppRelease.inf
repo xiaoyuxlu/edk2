@@ -1,0 +1,16 @@
+### @file
+#
+#  Copyright (c) 2019, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+###
+
+[Defines]
+  INF_VERSION               = 0x00010017
+  BASE_NAME                 = TestRustLangAppRelease
+  FILE_GUID                 = F3258837-ACB1-4D66-8350-FED73A569C25
+  MODULE_TYPE               = UEFI_APPLICATION
+
+[Binaries]
+  PE32|target/x86_64-unknown-uefi/release/test_rust_lang_app.efi
