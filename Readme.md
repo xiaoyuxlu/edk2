@@ -112,12 +112,12 @@ command
 
 to build debug version
 ```
-cargo xbuild
+cargo xbuild --target x86_64-unknown-uefi
 ```
 
 to build release version
 ```
-cargo xbuild --release
+cargo xbuild --release --target x86_64-unknown-uefi
 ```
 
 ## TODO

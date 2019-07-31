@@ -14,4 +14,4 @@
   LIBRARY_CLASS             = TestRustLangLib
 
 [Binaries]
-  Library|target/release/test_rust_lang_lib.lib
+  Library|target/x86_64-unknown-uefi/release/libtest_rust_lang_lib.a
