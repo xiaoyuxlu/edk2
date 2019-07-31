@@ -17,6 +17,7 @@
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
 #![feature(alloc_error_handler)]
+#![feature(core_panic_info)]
 #![feature(asm)]
 
 #![cfg_attr(not(test), no_std)]
@@ -70,8 +71,34 @@ pub extern "win64" fn test_integer_overflow (
     Status::SUCCESS
 }
 
+#[no_mangle]
+#[export_name = "TestIntegerCheckedOverflow"]
+pub extern "win64" fn test_integer_checked_overflow (
+    buffer_size: usize,
+    width : u32,
+    height : u32,
+    ) -> Status
+{
+
+    let mut data_size: u32 = 0;
+
+    match width.checked_mul(height) {
+      Some(size) => {data_size = size},
+      None => {return Status::INVALID_PARAMETER},
+    }
+    match data_size.checked_mul(4) {
+      Some(size) => {data_size = size},
+      None => {return Status::INVALID_PARAMETER},
+    }
+
+    if data_size as usize > buffer_size {
+      return Status::UNSUPPORTED;
+    }
+
+    Status::SUCCESS
+}
+
 extern "win64" {
-  // NOTE: It should be vararg. But vararg is unsupported.
   fn ExternInit(Data: *mut usize);
 }
 
@@ -237,6 +264,7 @@ pub extern "win64" fn test_buffer_alloc (
     let buffer = unsafe { ALLOCATOR.alloc (layout) };
     unsafe {*buffer = 1 };
     unsafe { ALLOCATOR.dealloc (buffer, layout) };
+    drop (buffer); // It is useless
     unsafe {*buffer = 1 }; // cannot catch
 
     let layout = core::alloc::Layout::new::<u32>();
@@ -305,4 +333,22 @@ pub extern "win64" fn test_box_alloc_fail (
     let mut a = Box::new([0_u8; 0x800]); // it will call __rust_alloc().
 
     a
+}
+
+#[no_mangle]
+#[export_name = "TestBoxConvert"]
+pub extern "win64" fn test_box_convert (
+    size: usize
+    ) -> *mut u8
+{
+    let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(size, 4) };
+    let buffer = unsafe { ALLOCATOR.alloc (layout) };
+
+    let mut box_buffer = unsafe { Box::<u8>::from_raw(buffer) };
+
+    unsafe { ALLOCATOR.dealloc (buffer, layout) };
+
+    *box_buffer = 1;
+
+    Box::<u8>::into_raw(box_buffer)
 }
