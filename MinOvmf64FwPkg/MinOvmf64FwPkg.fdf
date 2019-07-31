@@ -135,8 +135,8 @@ INF ShellPkg/Application/Shell/Shell.inf
 #}
 
 FILE DXE_CORE = 06948D4A-D359-4721-ADF6-5225485A6A3A {
-  SECTION PE32 = MinOvmf64FwPkg/payload-efi
-  SECTION UI   ="payload-efi"
+  SECTION PE32 = MinOvmf64FwPkg/payload-efi.efi
+  SECTION UI   ="payload-efi.efi"
 }
 
 ################################################################################
