@@ -18,6 +18,7 @@ panic = "abort" # disable stack unwinding on panic
 cpuio = "*"
 spin = "0.4.9"
 r-efi = "2.1.0"
+test_rust_lang_lib = { path = "../TestRustLangLib" }
 
 [dependencies.lazy_static]
 version = "1.0"

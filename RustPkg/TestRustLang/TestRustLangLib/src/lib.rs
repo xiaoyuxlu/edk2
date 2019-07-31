@@ -12,8 +12,6 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-#![crate_type = "staticlib"]
-
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
 #![feature(alloc_error_handler)]

@@ -27,6 +27,8 @@
 
 mod mem;
 
+extern crate test_rust_lang_lib;
+
 use r_efi::efi;
 use r_efi::efi::{Status};
 
@@ -38,7 +40,7 @@ use core::mem::transmute;
 
 use core::slice::from_raw_parts;
 
-#[panic_handler]
+//#[panic_handler]
 #[allow(clippy::empty_loop)]
 fn panic(_info: &PanicInfo) -> ! {
     unsafe { asm!("int3"); }
@@ -61,7 +63,7 @@ unsafe impl GlobalAlloc for MyAllocator {
       }
 
       let mut address : *mut c_void = core::ptr::null_mut();
-      let allocate_pool : extern "win64" fn(
+      let allocate_pool : extern "win64" fn (
         efi::MemoryType,
         usize,
         *mut *mut core::ffi::c_void,
@@ -84,7 +86,7 @@ unsafe impl GlobalAlloc for MyAllocator {
     }
 }
 
-#[global_allocator]
+//#[global_allocator]
 static ALLOCATOR: MyAllocator = MyAllocator;
 
 extern crate alloc;
@@ -92,12 +94,68 @@ extern crate alloc;
 use alloc::vec::Vec;
 use alloc::boxed::Box;
 
-#[alloc_error_handler]
+//#[alloc_error_handler]
 fn alloc_error_handler(layout: core::alloc::Layout) -> !
 {
     unsafe { asm!("int3"); }
     loop {}
 }
+
+
+// NOTE: It should be vararg. But vararg is unsupported.
+#[no_mangle]
+#[export_name = "DebugPrint"]
+extern "win64" fn DebugPrint(error_level: usize, format: *const u8, arg: usize)
+{
+}
+#[no_mangle]
+#[export_name = "AllocatePool"]
+extern "win64" fn AllocatePool (size: usize) -> *mut c_void
+{
+      let mut address : *mut c_void = core::ptr::null_mut();
+      let allocate_pool : extern "win64" fn (
+        efi::MemoryType,
+        usize,
+        *mut *mut core::ffi::c_void,
+        ) -> efi::Status = unsafe {(*BS).allocate_pool};
+      let status = allocate_pool (
+                     efi::MemoryType::BootServicesData,
+                     size,
+                     &mut address as *mut *mut c_void
+                     );
+      if status != Status::SUCCESS {
+        return core::ptr::null_mut();
+      }
+      address as *mut c_void
+}
+#[no_mangle]
+#[export_name = "AllocateZeroPool"]
+extern "win64" fn AllocateZeroPool (size: usize) -> *mut c_void
+{
+    let buffer = AllocatePool (size);
+    if buffer == core::ptr::null_mut() {
+      return core::ptr::null_mut();
+    }
+
+    unsafe {core::ptr::write_bytes (buffer, 0, size);}
+
+    buffer as *mut c_void
+}
+#[no_mangle]
+#[export_name = "FreePool"]
+extern "win64" fn FreePool (buffer: *mut c_void)
+{
+      let free_pool : extern "win64" fn(
+        *mut core::ffi::c_void,
+        ) -> efi::Status = unsafe { (*BS).free_pool };
+      free_pool (buffer as *mut c_void);
+}
+#[no_mangle]
+#[export_name = "ExternInit"]
+extern "win64" fn ExternInit(data: *mut usize)
+{
+}
+
 
 #[no_mangle]
 pub extern "C" fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTable) -> Status
@@ -108,8 +166,10 @@ pub extern "C" fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTa
     }
 
     // L"Hello World!/r/n"
-    let mut string_name: [efi::Char16; 14] = [
-      0x48, 0x65, 0x6c, 0x6c, 0x6f, 0x20, 0x57, 0x6f, 0x72, 0x6c, 0x64, 0x21, 0x0A, 0x0D
+    let string_name = [
+      0x48u16, 0x65u16, 0x6cu16, 0x6cu16, 0x6fu16, 0x20u16,
+      0x57u16, 0x6fu16, 0x72u16, 0x6cu16, 0x64u16, 0x21u16,
+      0x0Au16, 0x0Du16, 0x00u16
       ];
     let output_string : extern "win64" fn(
         *mut efi::protocols::simple_text_output::Protocol,
@@ -117,8 +177,10 @@ pub extern "C" fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTa
         ) -> efi::Status = unsafe { (*((*ST).con_out)).output_string };
     output_string (
         unsafe {(*ST).con_out},
-        &mut string_name as *mut [efi::Char16; 14] as *mut efi::Char16,
+        string_name.as_ptr() as *mut efi::Char16,
         );
+
+    test_rust_lang_lib::test_integer_overflow (0x10000, 0xFFFFFFFF, 0xFFFFFFFF);
 
     Status::SUCCESS
 }
