@@ -129,9 +129,23 @@ pub extern "win64" fn traslate_bmp_to_gop_blt (
       return Status::UNSUPPORTED;
     }
 
-    let data_size_per_line = bmp_header.pixel_width * bmp_header.bit_per_pixel as u32;
-    let data_size_per_line = ((data_size_per_line + 31) >> 3) & 0xFFFFFFFC;
-    let data_size = data_size_per_line * bmp_header.pixel_height;
+    let mut data_size_per_line = 0;
+    match (bmp_header.pixel_width).checked_mul(bmp_header.bit_per_pixel as u32) {
+      Some(size) => {data_size_per_line = size},
+      None => {return Status::UNSUPPORTED},
+    }
+
+    match data_size_per_line.checked_add(31) {
+      Some(size) => {data_size_per_line = size},
+      None => {return Status::UNSUPPORTED},
+    }
+
+    let data_size_per_line = (data_size_per_line >> 3) & 0xFFFFFFFC;
+    let mut data_size = 0;
+    match (data_size_per_line).checked_mul(bmp_header.pixel_height) {
+      Some(size) => {data_size = size},
+      None => {return Status::UNSUPPORTED},
+    }
 
     if (bmp_header.size as usize != bmp_image_size) || 
        (bmp_header.size <  bmp_header.image_offset) || 
@@ -160,7 +174,15 @@ pub extern "win64" fn traslate_bmp_to_gop_blt (
     //
     // calc image
     //
-    let blt_buffer_size = bmp_header.pixel_height * bmp_header.pixel_width * (size_of::<BltPixel>() as u32);
+    let mut blt_buffer_size = 0;
+    match (bmp_header.pixel_height).checked_mul(bmp_header.pixel_width) {
+      Some(size) => {blt_buffer_size = size},
+      None => {return Status::UNSUPPORTED},
+    }
+    match (blt_buffer_size).checked_mul(size_of::<BltPixel>() as u32) {
+      Some(size) => {blt_buffer_size = size},
+      None => {return Status::UNSUPPORTED},
+    }
 
     let mut is_allocated : bool = false;
     if unsafe {*gop_blt == core::ptr::null_mut() } {
@@ -307,8 +329,24 @@ pub extern "win64" fn traslate_gop_blt_to_bmp (
 
     let padding_size = pixel_width & 0x3;
 
-    let bmp_size = pixel_width * 3 + padding_size;
-    let bmp_size = bmp_size * pixel_height + size_of::<BmpImageHeader>() as u32;
+    let mut bmp_size = 0;
+    match (pixel_width).checked_mul(3) {
+      Some(size) => {bmp_size = size},
+      None => {return Status::UNSUPPORTED},
+    }
+    match (bmp_size).checked_add(padding_size) {
+      Some(size) => {bmp_size = size},
+      None => {return Status::UNSUPPORTED},
+    }
+
+    match (bmp_size).checked_mul(pixel_height) {
+      Some(size) => {bmp_size = size},
+      None => {return Status::UNSUPPORTED},
+    }
+    match (bmp_size).checked_add(size_of::<BmpImageHeader>() as u32) {
+      Some(size) => {bmp_size = size},
+      None => {return Status::UNSUPPORTED},
+    }
 
     if unsafe {*bmp_image == core::ptr::null_mut() } {
       unsafe {
