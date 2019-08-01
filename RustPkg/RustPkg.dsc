@@ -69,11 +69,11 @@
   BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   UefiBootManagerLib|MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
-  BmpSupportLib|MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+  #BmpSupportLib|MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
 !if $(TARGET) == RELEASE
-  #BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLibRustRelease.inf
+  BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLibRustRelease.inf
 !else
-  #BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLibRustDebug.inf
+  BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLibRustDebug.inf
 !endif
 
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
@@ -179,17 +179,6 @@
   }
 
   RustPkg/Test/TestBmpApp/TestBmpApp.inf
-
-  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf {
-  <LibraryClasses>
-!if $(TARGET) == RELEASE
-    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibRelease.inf
-!else
-    #TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibDebug.inf
-    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibRelease.inf
-!endif
-  }
-
 
 [BuildOptions]
   MSFT:DEBUG_*_*_CC_FLAGS = /Od /Oy-

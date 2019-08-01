@@ -75,7 +75,7 @@ contains the following components that are covered by additional licenses:
 cargo install cargo-xbuild
 ```
 
-3) Compile the code
+3) Compile the rust library + EDKII
 
 * `Repository` is the identifier of the repository the patch applies.
   This identifier should only be provided for repositories other than
@@ -110,15 +110,23 @@ release of openssl.
 To get a full, buildable EDK II repository, use following steps of git
 command
 
-to build debug version
 ```
-cargo xbuild --target x86_64-unknown-uefi
+cargo xbuild [--release]
 ```
 
-to build release version
+the output is target/[debug|release]/base_bmp_support_lib_rust.lib
+
+Then build the RustPkg/RustPkg.dsc, to generate TestBmpApp.efi.
+
+4) Compile the rust module directly.
+
+go to rust folder, such as RustPkg\TestRustLang\TestRustLangApp
+
 ```
-cargo xbuild --release --target x86_64-unknown-uefi
+cargo xbuild [--release] --target x86_64-unknown-uefi
 ```
+
+the output is target/x86_64-unknown-uefi/[debug|release]/test_rust_lang_app.efi
 
 ## TODO
 
