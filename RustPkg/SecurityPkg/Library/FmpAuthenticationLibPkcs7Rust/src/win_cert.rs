@@ -48,4 +48,5 @@ pub const WIN_CERT_TYPE_PKCS7_GUID: Guid = Guid::from_fields(
 pub struct WinCertificateUefiGuid {
     pub hdr: WinCertificate,
     pub cert_type: Guid,
+    pub cert_data: [u8; 0],
 }
