@@ -18,6 +18,7 @@ panic = "abort" # disable stack unwinding on panic
 # the profile used for `cargo build --release`
 [profile.release]
 panic = "abort" # disable stack unwinding on panic
+overflow-checks = true
 
 [dependencies]
 cpuio = "*"

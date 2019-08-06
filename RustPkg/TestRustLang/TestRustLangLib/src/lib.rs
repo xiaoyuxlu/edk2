@@ -96,6 +96,16 @@ pub extern "win64" fn test_integer_checked_overflow (
     Status::SUCCESS
 }
 
+#[no_mangle]
+#[export_name = "TestIntegerCast"]
+pub extern "win64" fn test_integer_cast (
+    buffer_size: u64,
+    ) -> u32
+{
+    let data_size : u32 = buffer_size as u32;
+    data_size
+}
+
 extern "win64" {
   fn ExternInit(Data: *mut usize);
 }
