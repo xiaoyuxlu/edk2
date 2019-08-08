@@ -18,8 +18,6 @@
 
 #![allow(unused)]
 
-mod common;
-
 use r_efi::efi;
 use r_efi::efi::{Status, PhysicalAddress, CapsuleBlockDescriptor, CapsuleBlockDescriptorUnion, CapsuleHeader,
 CAPSULE_FLAGS_PERSIST_ACROSS_RESET, CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE, CAPSULE_FLAGS_INITIATE_RESET, };
