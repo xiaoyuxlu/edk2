@@ -18,6 +18,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 #include <Ppi/EmuThunk.h>
 #include <Protocol/EmuThunk.h>
 
+#include "Win/Host/WinInclude.h"
+#include <Protocol/EmuSocket.h>
 
 
 EFI_STATUS
@@ -61,6 +63,14 @@ Returns:
 
   BuildGuidDataHob (
     &gEmuThunkProtocolGuid,              // Guid
+    &Ptr,                                // Buffer
+    sizeof (VOID *)                      // Sizeof Buffer
+    );
+
+  Ptr = Thunk->SocketThunk ();
+
+  BuildGuidDataHob (
+    &gEmuSocketThunkProtocolGuid,              // Guid
     &Ptr,                                // Buffer
     sizeof (VOID *)                      // Sizeof Buffer
     );

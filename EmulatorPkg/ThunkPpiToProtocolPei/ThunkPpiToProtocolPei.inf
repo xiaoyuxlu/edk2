@@ -39,6 +39,7 @@
 
 [Protocols]
   gEmuThunkProtocolGuid                     # PROTOCOL ALWAYS_CONSUMED
+  gEmuSocketThunkProtocolGuid               # PROTOCOL ALWAYS_CONSUMED
 
 
 [Ppis]
