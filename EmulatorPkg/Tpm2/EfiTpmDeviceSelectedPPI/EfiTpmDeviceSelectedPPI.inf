@@ -1,0 +1,36 @@
+## @file
+# TpmDeviceSelectedPPI install gEfiTpmDeviceSelectedGuid
+#
+# Copyright (c) 2019, Intel Corporation. All rights reserved.
+#
+# SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+##
+
+[Defines]
+  INF_VERSION = 0x00010006
+  BASE_NAME = EfiTpmDeviceSelectedPPI
+  FILE_GUID = 69E6DE5D-F09E-485E-9936-EB70FDCFC82A
+  MODULE_TYPE = PEIM
+  VERSION_STRING = 1.0
+  ENTRY_POINT = EfiTpmDeviceSelectedPPIEntry
+
+[Sources]
+  EfiTpmDeviceSelectedPPI.c
+
+[Packages]
+  MdePkg/MdePkg.dec
+  EmulatorPkg/EmulatorPkg.dec
+
+[LibraryClasses]
+  BaseLib
+  PeimEntryPoint
+  BaseMemoryLib
+  DebugLib
+  PeiServicesLib
+
+[Ppis]
+  gEfiTpmDeviceSelectedGuid             # produce
+
+[depex]
+  TRUE
