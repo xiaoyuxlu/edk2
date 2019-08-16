@@ -39,6 +39,8 @@ SPDX-License-Identifier: BSD-2-Clause-Patent
 typedef UINT32 size_t ;
 #endif
 
+#include <WinSock2.h>
+#include <winioctl.h>
 #include "windows.h"
 
 #undef GUID

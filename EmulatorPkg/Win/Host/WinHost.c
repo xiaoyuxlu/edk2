@@ -155,10 +155,19 @@ WinThunk (
 }
 
 
+VOID * WinSocketThunk (
+  VOID
+)
+{
+  return &gEmuSocketThunkProtocol;
+}
+
+
 EMU_THUNK_PPI mSecEmuThunkPpi = {
   WinPeiAutoScan,
   WinFdAddress,
-  WinThunk
+  WinThunk,
+  WinSocketThunk,
 };
 
 VOID

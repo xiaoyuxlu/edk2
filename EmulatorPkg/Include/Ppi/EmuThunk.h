@@ -82,6 +82,21 @@ VOID *
   VOID
   );
 
+/*++
+Routine Description:
+  Export of EMU_SOCKET_THUNK_PROTOCOL from the SEC.
+
+Returns:
+  EFI_SUCCESS - Data returned
+
+**/
+typedef
+VOID *
+(EFIAPI *EMU_PEI_SOCKET_THUNK_INTERFACE) (
+  VOID
+  );
+
+
 
 
 /*++
@@ -114,6 +129,7 @@ typedef struct {
   EMU_PEI_AUTOSCAN                  MemoryAutoScan;
   EMU_PEI_FD_INFORMATION            FirmwareDevices;
   EMU_PEI_THUNK_INTERFACE           Thunk;
+  EMU_PEI_SOCKET_THUNK_INTERFACE    SocketThunk;
 } EMU_THUNK_PPI;
 
 extern EFI_GUID gEmuThunkPpiGuid;
