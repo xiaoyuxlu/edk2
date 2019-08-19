@@ -34,7 +34,7 @@ use r_efi::efi::{Status, PhysicalAddress};
 use core::ffi::c_void;
 use base_lib::Ia32Descriptor;
 
-extern "win64" {
+extern "C" {
   fn AsmReadIdtr(idtr: *mut Ia32Descriptor);
   fn AsmWriteIdtr(idtr: *mut Ia32Descriptor);
   fn AsmDisablePaging64 (cs: u16, entry_point: u32, context1: u32, context2: u32, new_stack: u32);
@@ -65,7 +65,7 @@ pub struct Switch64To32Context {
 }
 
 #[no_mangle]
-pub extern "win64" fn efi_main(
+pub extern "C" fn efi_main(
   entry_point_context: *mut Switch32To64Context,
   return_context: *mut Switch64To32Context
   ) -> !

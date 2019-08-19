@@ -38,7 +38,7 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
-extern "win64" {
+extern "C" {
   // NOTE: It should be vararg. But vararg is unsupported.
   fn DebugPrint(ErrorLevel: usize, Format: *const u8, Arg: usize);
 
@@ -104,7 +104,7 @@ fn fmp_authenticated_handler_pkcs7 (
 
 #[no_mangle]
 #[export_name = "AuthenticateFmpImage"]
-pub extern "win64" fn authenticate_fmp_image (
+pub extern "C" fn authenticate_fmp_image (
     image : *mut FirmwareImageAuthentication,
     image_size: usize,
     public_key_data: *mut u8,

@@ -9,7 +9,7 @@ edition = "2018"
 [lib]
 name = "test_rust_lang_lib"
 #crate-type = ["rlib"]
-crate-type = ["staticlib", "rlib"]
+crate-type = ["staticlib"]
 
 # the profile used for `cargo build`
 [profile.dev]

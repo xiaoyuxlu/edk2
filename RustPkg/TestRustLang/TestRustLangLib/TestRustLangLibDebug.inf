@@ -13,6 +13,9 @@
   MODULE_TYPE               = BASE
   LIBRARY_CLASS             = TestRustLangLib
 
-[Binaries]
+[Binaries.X64]
   #Library|target/x86_64-unknown-uefi/debug/libtest_rust_lang_lib.a
   Library|target/debug/test_rust_lang_lib.lib
+
+[Binaries.IA32]
+  Library|target/i686-pc-windows-msvc/debug/test_rust_lang_lib.lib

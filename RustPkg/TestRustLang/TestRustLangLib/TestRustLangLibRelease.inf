@@ -16,3 +16,6 @@
 [Binaries]
   #Library|target/x86_64-unknown-uefi/release/libtest_rust_lang_lib.a
   Library|target/release/test_rust_lang_lib.lib
+  
+[Binaries.IA32]
+  Library|target/i686-pc-windows-msvc/release/test_rust_lang_lib.lib

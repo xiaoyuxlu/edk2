@@ -58,6 +58,7 @@
   UefiDecompressLib|MdePkg/Library/BaseUefiDecompressLib/BaseUefiDecompressLib.inf
 
   PeiServicesLib|MdePkg/Library/PeiServicesLib/PeiServicesLib.inf
+  PeiServicesTablePointerLib|MdePkg/Library/PeiServicesTablePointerLib/PeiServicesTablePointerLib.inf
   DxeServicesLib|MdePkg/Library/DxeServicesLib/DxeServicesLib.inf
   DxeServicesTableLib|MdePkg/Library/DxeServicesTableLib/DxeServicesTableLib.inf
 
@@ -182,6 +183,9 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutColumn|L"Setup"|gEmuSystemConfigGuid|0x0|80
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutRow|L"Setup"|gEmuSystemConfigGuid|0x4|25
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|L"Timeout"|gEfiGlobalVariableGuid|0x0|10
+  
+[Components.IA32]
+  RustPkg/Library/MathLib/MathLib.inf
 
 [Components]
 
@@ -190,8 +194,27 @@
     MSFT:RELEASE_*_*_CC_FLAGS = /GL-
   }
 
-  RustPkg/Test/TestBmpApp/TestBmpApp.inf
+  RustPkg/Test/TestBmpApp/TestBmpApp.inf {
+  <LibraryClasses>
+    BmpSupportLib|RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+  }
   RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf
+
+  RustPkg/Override/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
+
+  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf {
+  <LibraryClasses>
+    NULL|RustPkg/Library/MathLib/MathLib.inf
+!if $(TARGET) == RELEASE
+    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibRelease.inf
+!else
+    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibDebug.inf
+!endif
+  }
+  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf {
+  <LibraryClasses>
+    NULL|RustPkg/Library/MathLib/MathLib.inf
+  }
 
 [BuildOptions]
   MSFT:DEBUG_*_*_CC_FLAGS = /Od /Oy-
