@@ -68,6 +68,8 @@ contains the following components that are covered by additional licenses:
 * [ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3](https://github.com/ucb-bar/berkeley-softfloat-3/blob/b64af41c3276f97f0e181920400ee056b9c88037/COPYING.txt)
 
 1) Install rust (https://www.rust-lang.org/)
+toolchain: x86_64-pc-windows-msvc and i686-pc-windows-msvc
+version: nigtly
 
 2) Intall xbuild
 
@@ -128,7 +130,22 @@ cargo xbuild [--release] --target x86_64-unknown-uefi
 
 the output is target/x86_64-unknown-uefi/[debug|release]/test_rust_lang_app.efi
 
+5) Compiler .rs with INF.
+
+step 1: goto RustPkg\External\r-efi
+```
+cargo xbuild --release --target x86_64-pc-windows-msvc
+cargo xbuild --target x86_64-pc-windows-msvc
+cargo xbuild --release --target i686-pc-windows-msvc
+cargo xbuild --target i686-pc-windows-msvc
+```
+
+step 2: build a normal EFI module, such as RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf,
+RustPkg/Override/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf,
+RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+
 ## TODO
 
-* integrate the rust into EDKII build tool.
+* support build in linux.
+* support cross module include.
 * add more rust version modules.
