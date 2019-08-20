@@ -146,6 +146,10 @@ build a normal EFI module, such as RustPkg/Test/TestRustLangApp2/TestRustLangApp
 RustPkg/Override/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf,
 RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
 
+NOTE:
+If the rust file has dependency, .toml file is required and .toml file should be included in INF.
+If the rust file is standalone, .rs file can be included in INF.
+
 3) build the rust module with Cargo as library, include binary lib in INF and build with EDKII
 
 go to rust folder, such as RustPkg\MdeModulePkg\Library\BaseBmpSupportLibRust

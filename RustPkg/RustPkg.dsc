@@ -194,8 +194,11 @@
     MSFT:RELEASE_*_*_CC_FLAGS = /GL-
   }
 
+  RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+
   RustPkg/Test/TestBmpApp/TestBmpApp.inf {
   <LibraryClasses>
+    NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
     BmpSupportLib|RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
   }
   RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf

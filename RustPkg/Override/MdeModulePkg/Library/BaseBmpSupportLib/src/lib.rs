@@ -18,14 +18,9 @@
 
 #![allow(unused)]
 
-mod bmp;
-mod common;
-
 use r_efi::efi;
 use r_efi::efi::{Status};
 use r_efi::protocols::graphics_output::BltPixel;
-
-use bmp::{BmpColorMap, BmpImageHeader};
 
 pub const DEBUG_INIT : usize = 0x00000001;
 pub const DEBUG_WARN : usize = 0x00000002;
@@ -61,6 +56,9 @@ use core::ffi::c_void;
 
 use core::mem::size_of;
 use core::mem::transmute;
+
+use base_lib::offset_of;
+use industry_standard_include::bmp::{BmpColorMap, BmpImageHeader};
 
 #[panic_handler]
 #[allow(clippy::empty_loop)]

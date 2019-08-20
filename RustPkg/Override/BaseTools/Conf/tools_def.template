@@ -2847,10 +2847,19 @@ RELEASE_RVCTCYGWIN_ARM_CC_FLAGS  = "$(CCPATH_FLAG)" $(ARCHCC_FLAGS) $(PLATFORM_F
 # RUSTC definitions
 ##################
 *_*_*_RUSTC_PATH            = rustc
-DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target x86_64-pc-windows-msvc -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\sysroot -L dependency=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\x86_64-pc-windows-msvc\debug\deps   --extern r_efi=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\x86_64-pc-windows-msvc\debug\deps\libr_efi-151047d12b22f442.rlib
-RELEASE_*_X64_RUSTC_FLAGS   = --edition=2018 --target x86_64-pc-windows-msvc -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\sysroot -L dependency=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\x86_64-pc-windows-msvc\release\deps --extern r_efi=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\x86_64-pc-windows-msvc\release\deps\libr_efi-edb8c60e1fccf265.rlib
-DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target i686-pc-windows-msvc   -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\sysroot -L dependency=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\i686-pc-windows-msvc\debug\deps     --extern r_efi=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\i686-pc-windows-msvc\debug\deps\libr_efi-1a118154e894e8d7.rlib
-RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-pc-windows-msvc   -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\sysroot -L dependency=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\i686-pc-windows-msvc\release\deps   --extern r_efi=C:\home\edkii\edk2\RustPkg\Override\BaseTools\Rust\Bin\i686-pc-windows-msvc\release\deps\libr_efi-0d0e14b22a49020a.rlib
+DEBUG_*_X64_RUSTC_FLAGS     = --edition=2018 --target x86_64-pc-windows-msvc -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\x86_64-pc-windows-msvc\debug\libr_efi.rlib
+RELEASE_*_X64_RUSTC_FLAGS   = --edition=2018 --target x86_64-pc-windows-msvc -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\x86_64-pc-windows-msvc\release\libr_efi.rlib
+DEBUG_*_IA32_RUSTC_FLAGS    = --edition=2018 --target i686-pc-windows-msvc   -C debuginfo=2 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\i686-pc-windows-msvc\debug\libr_efi.rlib
+RELEASE_*_IA32_RUSTC_FLAGS  = --edition=2018 --target i686-pc-windows-msvc   -C opt-level=3 -C panic=abort --crate-type staticlib --sysroot ENV(WORKSPACE)\RustPkg\External\r-efi\target\sysroot --extern r_efi=ENV(WORKSPACE)\RustPkg\External\r-efi\target\i686-pc-windows-msvc\release\libr_efi.rlib
+
+##################
+# CARGO definitions
+##################
+*_*_*_CARGO_PATH            = cargo
+DEBUG_*_X64_CARGO_FLAGS     = --target x86_64-pc-windows-msvc
+RELEASE_*_X64_CARGO_FLAGS   = --target x86_64-pc-windows-msvc --release
+DEBUG_*_IA32_CARGO_FLAGS    = --target i686-pc-windows-msvc
+RELEASE_*_IA32_CARGO_FLAGS  = --target i686-pc-windows-msvc   --release
 
 #################
 # Build rule order
