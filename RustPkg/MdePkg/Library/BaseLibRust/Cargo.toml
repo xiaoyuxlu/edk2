@@ -20,10 +20,4 @@ panic = "abort" # disable stack unwinding on panic
 overflow-checks = true
 
 [dependencies]
-cpuio = "*"
-spin = "0.4.9"
 r-efi = "2.1.0"
-
-[dependencies.lazy_static]
-version = "1.0"
-features = ["spin_no_std"]

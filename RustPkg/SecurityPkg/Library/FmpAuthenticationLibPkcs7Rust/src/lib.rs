@@ -18,19 +18,17 @@
 
 #![allow(unused)]
 
-mod fmp;
-mod win_cert;
-mod common;
-
 use core::panic::PanicInfo;
 use core::ffi::c_void;
 use core::mem::{align_of, size_of, transmute};
 
+use base_lib::offset_of;
+
 use r_efi::efi;
 use r_efi::efi::{Status};
 
-use crate::fmp::FirmwareImageAuthentication;
-use crate::win_cert::{WinCertificateUefiGuid, WIN_CERTIFICATE_TYPE_EFI_GUID, WIN_CERT_TYPE_PKCS7_GUID};
+use uefi_include::fmp::FirmwareImageAuthentication;
+use uefi_include::win_cert::{WinCertificateUefiGuid, WIN_CERTIFICATE_TYPE_EFI_GUID, WIN_CERT_TYPE_PKCS7_GUID};
 
 #[panic_handler]
 #[allow(clippy::empty_loop)]

@@ -16,10 +16,5 @@
 
 #![allow(unused)]
 
-#[cfg(not(test))]
-#[macro_export]
-macro_rules! offset_of {
-    ($container:ty, $field:ident) => {
-        unsafe { &(*(core::ptr::null() as *const $container)).$field as *const _ as usize }
-    };
-}
+pub mod fmp;
+pub mod win_cert;

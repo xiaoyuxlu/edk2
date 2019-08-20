@@ -23,6 +23,7 @@
 #![allow(unused)]
 
 mod mem;
+mod common;
 
 use r_efi::efi;
 use r_efi::efi::{Status};

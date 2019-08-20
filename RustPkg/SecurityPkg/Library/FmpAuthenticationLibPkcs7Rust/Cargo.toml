@@ -19,10 +19,6 @@ panic = "abort" # disable stack unwinding on panic
 panic = "abort" # disable stack unwinding on panic
 
 [dependencies]
-cpuio = "*"
-spin = "0.4.9"
 r-efi = "2.1.0"
-
-[dependencies.lazy_static]
-version = "1.0"
-features = ["spin_no_std"]
+base_lib = { path = "../../../MdePkg/Library/BaseLibRust" }
+uefi_include = { path = "../../../MdePkg/Include/UefiRust" }

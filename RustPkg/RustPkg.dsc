@@ -196,7 +196,7 @@
 
   RustPkg/Test/TestBmpApp/TestBmpApp.inf {
   <LibraryClasses>
-    BmpSupportLib|RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+    #BmpSupportLib|RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
   }
   RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf
 
