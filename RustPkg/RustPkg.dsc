@@ -196,11 +196,14 @@
 
   RustPkg/Test/TestBmpApp/TestBmpApp.inf {
   <LibraryClasses>
-    #BmpSupportLib|RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+    BmpSupportLib|RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
   }
   RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf
 
-  RustPkg/Override/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
+  RustPkg/Override/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf {
+  <LibraryClasses>
+    NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
+  }
 
   RustPkg/Test/TestRustLangApp/TestRustLangApp.inf {
   <LibraryClasses>
@@ -213,6 +216,7 @@
   }
   RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf {
   <LibraryClasses>
+    NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
     NULL|RustPkg/Library/MathLib/MathLib.inf
   }
 
