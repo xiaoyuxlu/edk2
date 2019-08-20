@@ -68,7 +68,7 @@ contains the following components that are covered by additional licenses:
 * [ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3](https://github.com/ucb-bar/berkeley-softfloat-3/blob/b64af41c3276f97f0e181920400ee056b9c88037/COPYING.txt)
 
 1) Install rust (https://www.rust-lang.org/)
-toolchain: x86_64-pc-windows-msvc and i686-pc-windows-msvc
+toolchain: x86_64-pc-windows-msvc, i686-pc-windows-msvc, x86_64-unknown-uefi
 version: nigtly
 
 2) Intall xbuild
@@ -118,11 +118,13 @@ cargo xbuild [--release]
 
 the output is target/[debug|release]/base_bmp_support_lib_rust.lib
 
-Then build the RustPkg/RustPkg.dsc, to generate TestBmpApp.efi.
+Currently, we may use 3 ways to build UEFI module with rust support.
+Finally, we want to reduce the supported ways.
 
-4) Compile the rust module directly.
+1) Build the rust module with Cargo.
 
-go to rust folder, such as RustPkg\TestRustLang\TestRustLangApp
+go to rust folder, such as RustPkg\TestRustLang\TestRustLangApp,
+RustPkg\MdeModulePkg\Universal\CapsulePei\Common
 
 ```
 cargo xbuild [--release] --target x86_64-unknown-uefi
@@ -130,9 +132,9 @@ cargo xbuild [--release] --target x86_64-unknown-uefi
 
 the output is target/x86_64-unknown-uefi/[debug|release]/test_rust_lang_app.efi
 
-5) Compiler .rs with INF.
+2) Include the rust file in INF, and build with EDKII.
 
-step 1: goto RustPkg\External\r-efi
+goto RustPkg\External\r-efi
 ```
 cargo xbuild --release --target x86_64-pc-windows-msvc
 cargo xbuild --target x86_64-pc-windows-msvc
@@ -140,9 +142,21 @@ cargo xbuild --release --target i686-pc-windows-msvc
 cargo xbuild --target i686-pc-windows-msvc
 ```
 
-step 2: build a normal EFI module, such as RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf,
+build a normal EFI module, such as RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf,
 RustPkg/Override/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf,
 RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+
+3) build the rust module with Cargo as library, include binary lib in INF and build with EDKII
+
+go to rust folder, such as RustPkg\MdeModulePkg\Library\BaseBmpSupportLibRust
+
+```
+cargo xbuild [--release] --target x86_64-pc-windows-msvc
+```
+
+the output is target/[debug|release]/base_bmp_support_lib_rust.lib
+
+Then build the RustPkg/RustPkg.dsc, to generate TestBmpApp.efi.
 
 ## TODO
 

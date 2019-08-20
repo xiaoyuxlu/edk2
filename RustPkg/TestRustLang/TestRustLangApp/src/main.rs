@@ -63,7 +63,7 @@ unsafe impl GlobalAlloc for MyAllocator {
       }
 
       let mut address : *mut c_void = core::ptr::null_mut();
-      let allocate_pool : extern "C" fn (
+      let allocate_pool : extern "win64" fn (
         efi::MemoryType,
         usize,
         *mut *mut core::ffi::c_void,
@@ -79,7 +79,7 @@ unsafe impl GlobalAlloc for MyAllocator {
       address as *mut u8
     }
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-      let free_pool : extern "C" fn(
+      let free_pool : extern "win64" fn(
         *mut core::ffi::c_void,
         ) -> efi::Status = (*BS).free_pool;
       free_pool (ptr as *mut c_void);
@@ -105,15 +105,15 @@ fn alloc_error_handler(layout: core::alloc::Layout) -> !
 // NOTE: It should be vararg. But vararg is unsupported.
 #[no_mangle]
 #[export_name = "DebugPrint"]
-extern "C" fn DebugPrint(error_level: usize, format: *const u8, arg: usize)
+extern "win64" fn DebugPrint(error_level: usize, format: *const u8, arg: usize)
 {
 }
 #[no_mangle]
 #[export_name = "AllocatePool"]
-extern "C" fn AllocatePool (size: usize) -> *mut c_void
+extern "win64" fn AllocatePool (size: usize) -> *mut c_void
 {
       let mut address : *mut c_void = core::ptr::null_mut();
-      let allocate_pool : extern "C" fn (
+      let allocate_pool : extern "win64" fn (
         efi::MemoryType,
         usize,
         *mut *mut core::ffi::c_void,
@@ -130,7 +130,7 @@ extern "C" fn AllocatePool (size: usize) -> *mut c_void
 }
 #[no_mangle]
 #[export_name = "AllocateZeroPool"]
-extern "C" fn AllocateZeroPool (size: usize) -> *mut c_void
+extern "win64" fn AllocateZeroPool (size: usize) -> *mut c_void
 {
     let buffer = AllocatePool (size);
     if buffer == core::ptr::null_mut() {
@@ -143,22 +143,22 @@ extern "C" fn AllocateZeroPool (size: usize) -> *mut c_void
 }
 #[no_mangle]
 #[export_name = "FreePool"]
-extern "C" fn FreePool (buffer: *mut c_void)
+extern "win64" fn FreePool (buffer: *mut c_void)
 {
-      let free_pool : extern "C" fn(
+      let free_pool : extern "win64" fn(
         *mut core::ffi::c_void,
         ) -> efi::Status = unsafe { (*BS).free_pool };
       free_pool (buffer as *mut c_void);
 }
 #[no_mangle]
 #[export_name = "ExternInit"]
-extern "C" fn ExternInit(data: *mut usize)
+extern "win64" fn ExternInit(data: *mut usize)
 {
 }
 
 
 #[no_mangle]
-pub extern "C" fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTable) -> Status
+pub extern "win64" fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTable) -> Status
 {
     unsafe {
       ST = system_table;
@@ -171,7 +171,7 @@ pub extern "C" fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTa
       0x57u16, 0x6fu16, 0x72u16, 0x6cu16, 0x64u16, 0x21u16,
       0x0Au16, 0x0Du16, 0x00u16
       ];
-    let output_string : extern "C" fn(
+    let output_string : extern "win64" fn(
         *mut efi::protocols::simple_text_output::Protocol,
         *mut efi::Char16,
         ) -> efi::Status = unsafe { (*((*ST).con_out)).output_string };
