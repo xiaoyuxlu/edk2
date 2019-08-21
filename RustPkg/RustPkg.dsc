@@ -208,7 +208,7 @@
     NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
   }
 
-  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf {
+  RustPkg/Test/TestRustLangApp3/TestRustLangApp.inf {
   <LibraryClasses>
     NULL|RustPkg/Library/MathLib/MathLib.inf
 !if $(TARGET) == RELEASE
