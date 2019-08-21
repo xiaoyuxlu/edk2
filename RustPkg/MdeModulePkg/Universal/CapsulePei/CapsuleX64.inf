@@ -32,7 +32,8 @@
 [Sources]
   X64/X64Entry.c
   X64/PageFaultHandler.nasm
-  Common/capsule_coalesce.rs
+  Common/CommonHeader.h
+  src/capsule_coalesce.rs
 
 [Packages]
   MdePkg/MdePkg.dec
