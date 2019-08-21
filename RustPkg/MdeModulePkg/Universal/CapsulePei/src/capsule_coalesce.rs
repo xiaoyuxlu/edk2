@@ -24,26 +24,6 @@ CAPSULE_FLAGS_PERSIST_ACROSS_RESET, CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE, CAPSULE
 
 pub const MAX_ADDRESS: u64 = 0xFFFFFFFFFFFF;
 
-pub const DEBUG_INIT : usize = 0x00000001;
-pub const DEBUG_WARN : usize = 0x00000002;
-pub const DEBUG_LOAD : usize = 0x00000004;
-pub const DEBUG_FS : usize = 0x00000008;
-pub const DEBUG_POOL : usize = 0x00000010;
-pub const DEBUG_PAGE : usize = 0x00000020;
-pub const DEBUG_INFO : usize = 0x00000040;
-pub const DEBUG_DISPATCH : usize = 0x00000080;
-pub const DEBUG_VARIABLE : usize = 0x00000100;
-pub const DEBUG_BM : usize = 0x00000400;
-pub const DEBUG_BLKIO : usize = 0x00001000;
-pub const DEBUG_NET : usize = 0x00004000;
-pub const DEBUG_UNDI : usize = 0x00010000;
-pub const DEBUG_LOADFILE : usize = 0x00020000;
-pub const DEBUG_EVENT : usize = 0x00080000;
-pub const DEBUG_GCD : usize = 0x00100000;
-pub const DEBUG_CACHE : usize = 0x00200000;
-pub const DEBUG_VERBOSE : usize = 0x00400000;
-pub const DEBUG_ERROR : usize = 0x80000000;
-
 extern "C" {
   // NOTE: It should be vararg. But vararg is unsupported.
   fn DebugPrint(ErrorLevel: usize, Format: *const u8, Arg: usize);

@@ -189,19 +189,18 @@
 
 [Components]
 
-  MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf {
-  <BuildOptions>
-    MSFT:RELEASE_*_*_CC_FLAGS = /GL-
-  }
-
   RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLib.inf
-
   RustPkg/Test/TestBmpApp/TestBmpApp.inf {
   <LibraryClasses>
     NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
     BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLib.inf
   }
-  RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf
+
+  RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
+  RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf {
+  <LibraryClasses>
+    FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
+  }
 
   RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf {
   <LibraryClasses>
