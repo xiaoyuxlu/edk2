@@ -68,7 +68,7 @@ contains the following components that are covered by additional licenses:
 * [ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3](https://github.com/ucb-bar/berkeley-softfloat-3/blob/b64af41c3276f97f0e181920400ee056b9c88037/COPYING.txt)
 
 1) Install rust (https://www.rust-lang.org/)
-toolchain: x86_64-pc-windows-msvc, i686-pc-windows-msvc, x86_64-unknown-uefi
+toolchain: x86_64-pc-windows-msvc, i686-pc-windows-msvc, x86_64-unknown-uefi.
 version: nigtly
 
 2) Intall xbuild
@@ -123,8 +123,8 @@ Finally, we want to reduce the supported ways.
 
 1) Build the rust module with Cargo.
 
-go to rust folder, such as RustPkg\TestRustLang\TestRustLangApp,
-RustPkg\MdeModulePkg\Universal\CapsulePei\Common
+go to rust folder, such as RustPkg\Test\TestRustLangApp,
+RustPkg\MdeModulePkg\Universal\CapsulePei
 
 ```
 cargo xbuild [--release] --target x86_64-unknown-uefi
@@ -143,8 +143,8 @@ cargo xbuild --target i686-pc-windows-msvc
 ```
 
 build a normal EFI module, such as RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf,
-RustPkg/Override/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf,
-RustPkg/Override/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf,
+RustPkg/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
 
 NOTE:
 If the rust file has dependency, .toml file is required and .toml file should be included in INF.

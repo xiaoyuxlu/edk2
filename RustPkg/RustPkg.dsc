@@ -212,9 +212,9 @@
   <LibraryClasses>
     NULL|RustPkg/Library/MathLib/MathLib.inf
 !if $(TARGET) == RELEASE
-    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibRelease.inf
+    TestRustLangLib|RustPkg/Test/TestRustLangLib/TestRustLangLibRelease.inf
 !else
-    TestRustLangLib|RustPkg/TestRustLang/TestRustLangLib/TestRustLangLibDebug.inf
+    TestRustLangLib|RustPkg/Test/TestRustLangLib/TestRustLangLibDebug.inf
 !endif
   }
   RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf {
