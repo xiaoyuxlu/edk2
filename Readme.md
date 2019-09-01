@@ -67,11 +67,84 @@ contains the following components that are covered by additional licenses:
 * [CryptoPkg/Library/OpensslLib/openssl](https://github.com/openssl/openssl/blob/50eaac9f3337667259de725451f201e784599687/LICENSE)
 * [ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3](https://github.com/ucb-bar/berkeley-softfloat-3/blob/b64af41c3276f97f0e181920400ee056b9c88037/COPYING.txt)
 
-1) Install rust (https://www.rust-lang.org/)
-toolchain: x86_64-pc-windows-msvc, i686-pc-windows-msvc, x86_64-unknown-uefi.
-version: nigtly
+1) Install rust
 
-2) Intall xbuild
+1.1) download the source code
+
+We need add patch for i686-unknown-uefi target. (https://github.com/jyao1/rust)
+
+1.2) follow readme.md to generate config.toml.
+
+NOTE:
+
+* set lld = true to build rust-lld.
+* set extended = true to build rust-lld.
+* set docs = false to save build time.
+
+Linux OS:
+
+* set prefix, sysconfdir = <local dir> in Linux OS.
+
+Windows OS:
+
+* set python = "python" in Windows OS.
+* set buid, host, target = x86_64-pc-windows-msvc in Windows OS.
+* set allow-old-toolchain = true , if visual studio < vs2019
+
+1.3) follow readme.md to build the source.
+
+```
+./x.py build
+```
+
+1.4) Install rust and cargo.
+
+1.4.1) For Linux OS:
+
+Use below commend to install.
+
+```
+./x.py install
+./x.py install cargo
+```
+
+* rustc is at <prefix>/bin.
+* rust-lld is at <prefix>/lib/rustlib/x86_64-unknown-linux-gnu/bin.
+
+```
+export RUST_PREFIX=<rust install dir>
+export PATH=$RUST_PREFIX/bin:$RUST_PREFIX/lib/rustlib/x86_64-unknown-linux-gnu/bin:$PATH
+export RUST_SRC=<rust> # modify to the rust git.
+export XARGO_RUST_SRC=$RUST_SRC/src
+```
+
+1.4.2) For Windows OS:
+
+Set CARGO_HOME environment (default to ~/.cargo.  windows example: c:\users\<user>\.cargo)
+
+Add binary location to PATH (Assume RUST_SRC=<rust> @REM modify to the rust git.)
+
+* rustc.exe toolchain is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
+* cargo.exe and tools is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin
+
+```
+set RUST_SRC=<rust> @REM modify to the rust git.
+set CARGO_HOME=c:\work\.cargo
+set PATH=%CARGO_HOME%\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin;%PATH%
+set XARGO_RUST_SRC=%RUST_SRC%\src
+```
+
+Other way:
+Copy cargo.exe from %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin to %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
+
+```
+set RUST_SRC=<rust> @REM modify to the rust git.
+rustup toolchain link rust-uefi %RUST_SRC%x\build\x86_64-pc-windows-msvc\stage2
+rustup default rust-uefi
+set XARGO_RUST_SRC=%RUST_SRC%\src
+```
+
+1.5) Intall xbuild
 
 ```
 cargo install cargo-xbuild
@@ -118,7 +191,34 @@ cargo xbuild [--release]
 
 the output is target/[debug|release]/base_bmp_support_lib_rust.lib
 
-Currently, we may use 3 ways to build UEFI module with rust support.
+2.4.2) For Windows OS:
+
+Add binary location to PATH (Assume LLVM_SRC=<llvm-project> @REM modify to the llvm-project git.)
+
+* clang and lld-link are at %LLVM_SRC%\build\Release\bin.
+
+```
+set LLVM_SRC=<llvm-project> @REM modify to the llvm-project git.
+set PATH=%LLVM_SRC%\build\Release\bin;%PATH%
+```
+
+3) Prepare EDKII
+
+Copy RustPkg/Override/BaseTools/Conf/build_rule.template to Conf/build_rule.txt.
+
+Copy RustPkg/Override/BaseTools/Conf/tools_def.template to Conf/tools_def.txt.
+
+Set CLANG7WIN_BIN variable to the binary path, if they are not in PATH.
+
+Additional step for Windows, set CLANG_HOST_BIN=n for nmake.
+
+```
+set CLANG_HOST_BIN=n
+```
+
+## Build
+
+Currently, we may use ways to build UEFI module with rust support.
 Finally, we want to reduce the supported ways.
 
 1) Build the rust module with Cargo.
@@ -127,43 +227,42 @@ go to rust folder, such as RustPkg\Test\TestRustLangApp,
 RustPkg\MdeModulePkg\Universal\CapsulePei
 
 ```
-cargo xbuild [--release] --target x86_64-unknown-uefi
+cargo xbuild [--release] --target [x86_64-unknown-uefi|i686-unknown-uefi]
 ```
 
-the output is target/x86_64-unknown-uefi/[debug|release]/test_rust_lang_app.efi
+the output is target/[x86_64-unknown-uefi|i686-unknown-uefi]/[debug|release]/test_rust_lang_app.efi
 
-2) Include the rust file in INF, and build with EDKII.
+2) Include the rust file in INF, and build in EDKII tools.
 
 goto RustPkg\External\r-efi
 ```
-cargo xbuild --release --target x86_64-pc-windows-msvc
-cargo xbuild --target x86_64-pc-windows-msvc
-cargo xbuild --release --target i686-pc-windows-msvc
-cargo xbuild --target i686-pc-windows-msvc
+cargo xbuild --release --target x86_64-unknown-uefi
+cargo xbuild --target x86_64-unknown-uefi
+cargo xbuild --release --target i686-unknown-uefi
+cargo xbuild --target i686-unknown-uefi
 ```
 
 build a normal EFI module, such as RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf,
 RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf,
 RustPkg/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
 
+```
+build -p RustPkg/RustPkg.dsc -t CLANG7WIN -a IA32 -a X64
+```
+
 NOTE:
-If the rust file has dependency, .toml file is required and .toml file should be included in INF.
-If the rust file is standalone, .rs file can be included in INF.
 
-3) build the rust module with Cargo as library, include binary lib in INF and build with EDKII
-
-go to rust folder, such as RustPkg\MdeModulePkg\Library\BaseBmpSupportLibRust
-
-```
-cargo xbuild [--release] --target x86_64-pc-windows-msvc
-```
-
-the output is target/[debug|release]/base_bmp_support_lib_rust.lib
-
-Then build the RustPkg/RustPkg.dsc, to generate TestBmpApp.efi.
+* If the rust file has dependency, .toml file is required and .toml file should be included in INF.
+* If the rust file is standalone, .rs file can be included in INF.
 
 ## TODO
 
-* support build in linux.
+* support toml build directly, to avoid include toml in INF.
+* separate toml->lib and toml->efi.
+* eliminate target generation in source dir.
+* better incremental build.
+
 * support cross module include.
-* add more rust version modules.
+* add more rust modules.
+
+* The full LLVM enabling is out of scope of this task. It is handled by EDKII trunk.
