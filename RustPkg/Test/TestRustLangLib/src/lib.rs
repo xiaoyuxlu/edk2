@@ -27,12 +27,8 @@ mod mem;
 use r_efi::efi;
 use r_efi::efi::{Status};
 
-extern "C" {
-  // NOTE: It should be vararg. But vararg is unsupported.
-  fn DebugPrint(ErrorLevel: usize, Format: *const u8, Arg: usize);
-
+extern {
   fn AllocatePool (Size: usize) -> *mut c_void;
-  fn AllocateZeroPool (Size: usize) -> *mut c_void;
   fn FreePool (Buffer: *mut c_void);
 }
 
@@ -47,14 +43,13 @@ use core::slice::from_raw_parts;
 #[panic_handler]
 #[allow(clippy::empty_loop)]
 fn panic(_info: &PanicInfo) -> ! {
-    unsafe {DebugPrint (0x80000000, b"panic ...\n\0" as *const u8, 0);};
     unsafe { asm!("int3"); }
     loop {}
 }
 
 #[no_mangle]
 #[export_name = "TestIntegerOverflow"]
-pub extern "C" fn test_integer_overflow (
+pub extern fn test_integer_overflow (
     buffer_size: usize,
     width : u32,
     height : u32,
@@ -71,7 +66,7 @@ pub extern "C" fn test_integer_overflow (
 
 #[no_mangle]
 #[export_name = "TestIntegerCheckedOverflow"]
-pub extern "C" fn test_integer_checked_overflow (
+pub extern fn test_integer_checked_overflow (
     buffer_size: usize,
     width : u32,
     height : u32,
@@ -98,7 +93,7 @@ pub extern "C" fn test_integer_checked_overflow (
 
 #[no_mangle]
 #[export_name = "TestIntegerCast"]
-pub extern "C" fn test_integer_cast (
+pub extern fn test_integer_cast (
     buffer_size: u64,
     ) -> u32
 {
@@ -106,13 +101,13 @@ pub extern "C" fn test_integer_cast (
     data_size
 }
 
-extern "C" {
+extern {
   fn ExternInit(Data: *mut usize);
 }
 
 #[no_mangle]
 #[export_name = "TestUninitializedVariable"]
-pub extern "C" fn test_uninitializd_variable (
+pub extern fn test_uninitializd_variable (
     index: usize,
     ) -> usize
 {
@@ -131,7 +126,7 @@ pub extern "C" fn test_uninitializd_variable (
 
 #[no_mangle]
 #[export_name = "TestArrayOutOfRange"]
-pub extern "C" fn test_array_out_of_range (
+pub extern fn test_array_out_of_range (
     index: usize,
     ) -> usize
 {
@@ -152,7 +147,7 @@ pub struct TestTable {
 
 #[no_mangle]
 #[export_name = "TestBufferOverflow"]
-pub extern "C" fn test_buffer_overflow (
+pub extern fn test_buffer_overflow (
     buffer: &mut [u8; 0],
     buffer_size: usize,
     table: &TestTable,
@@ -177,7 +172,7 @@ pub struct TestTableFixed {
 
 #[no_mangle]
 #[export_name = "TestBufferOverflowFixed"]
-pub extern "C" fn test_buffer_overflow_fixed (
+pub extern fn test_buffer_overflow_fixed (
     buffer: &mut [u8; 32],
     table: &TestTableFixed,
     )
@@ -205,7 +200,7 @@ fn release_buffer (test_table : &mut TestTableFixed)
 
 #[no_mangle]
 #[export_name = "TestBufferDrop"]
-pub extern "C" fn test_buffer_drop (
+pub extern fn test_buffer_drop (
     
     )
 {
@@ -222,7 +217,7 @@ pub extern "C" fn test_buffer_drop (
 
 #[no_mangle]
 #[export_name = "TestBufferBorrow"]
-pub extern "C" fn test_buffer_borrow (
+pub extern fn test_buffer_borrow (
     test_table : &mut TestTableFixed
     )
 {
@@ -241,7 +236,6 @@ pub struct MyAllocator;
 
 unsafe impl GlobalAlloc for MyAllocator {
     unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-      unsafe {DebugPrint (0x80000000, b"alloc ...\n\0" as *const u8, 0);};
       let size = layout.size();
       let align = layout.align();
       if align > 8 {
@@ -254,7 +248,6 @@ unsafe impl GlobalAlloc for MyAllocator {
       unsafe { AllocatePool (size) as *mut u8 }
     }
     unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-      unsafe {DebugPrint (0x80000000, b"dealloc ...\n\0" as *const u8, 0);};
       unsafe { FreePool (ptr as *mut c_void); }
     }
 }
@@ -264,7 +257,7 @@ static ALLOCATOR: MyAllocator = MyAllocator;
 
 #[no_mangle]
 #[export_name = "TestBufferAlloc"]
-pub extern "C" fn test_buffer_alloc (
+pub extern fn test_buffer_alloc (
     
     )
 {
@@ -288,7 +281,6 @@ use alloc::boxed::Box;
 #[alloc_error_handler]
 fn alloc_error_handler(layout: core::alloc::Layout) -> !
 {
-    unsafe {DebugPrint (0x80000000, b"alloc_error_handler 0x%x\n\0" as *const u8, layout.size());};
     unsafe { asm!("int3"); }
     loop {}
 }
@@ -309,7 +301,7 @@ fn get_box (
 
 #[no_mangle]
 #[export_name = "TestBoxAlloc"]
-pub extern "C" fn test_box_alloc (
+pub extern fn test_box_alloc (
     r#type: u32
     ) -> Box<TestTableFixed>
 {
@@ -325,7 +317,7 @@ pub extern "C" fn test_box_alloc (
 
 #[no_mangle]
 #[export_name = "TestBoxFree"]
-pub extern "C" fn test_box_free (
+pub extern fn test_box_free (
     buffer: Box<TestTableFixed>
     )
 {
@@ -334,7 +326,7 @@ pub extern "C" fn test_box_free (
 
 #[no_mangle]
 #[export_name = "TestBoxAllocFail"]
-pub extern "C" fn test_box_alloc_fail (
+pub extern fn test_box_alloc_fail (
     size: u32
     ) -> Box<[u8; 0x800]>
 {
@@ -345,7 +337,7 @@ pub extern "C" fn test_box_alloc_fail (
 
 #[no_mangle]
 #[export_name = "TestBoxConvert"]
-pub extern "C" fn test_box_convert (
+pub extern fn test_box_convert (
     size: usize
     ) -> *mut u8
 {

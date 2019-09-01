@@ -70,18 +70,8 @@
   BootLogoLib|MdeModulePkg/Library/BootLogoLib/BootLogoLib.inf
   FileExplorerLib|MdeModulePkg/Library/FileExplorerLib/FileExplorerLib.inf
   UefiBootManagerLib|MdeModulePkg/Library/UefiBootManagerLib/UefiBootManagerLib.inf
-  #BmpSupportLib|MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
-!if $(TARGET) == RELEASE
-  BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLibRustRelease.inf
-!else
-  BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLibRustDebug.inf
-!endif
-#  FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
-!if $(TARGET) == RELEASE
-  FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7RustRelease.inf
-!else
-  FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7RustDebug.inf
-!endif
+  BmpSupportLib|MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+  FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
 
   IntrinsicLib|RustPkg/Library/IntrinsicLib/IntrinsicLib.inf
   #IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
@@ -183,16 +173,12 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutColumn|L"Setup"|gEmuSystemConfigGuid|0x0|80
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutRow|L"Setup"|gEmuSystemConfigGuid|0x4|25
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|L"Timeout"|gEfiGlobalVariableGuid|0x0|10
-  
-[Components.IA32]
-  RustPkg/Library/MathLib/MathLib.inf
 
 [Components]
 
   RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLib.inf
   RustPkg/Test/TestBmpApp/TestBmpApp.inf {
   <LibraryClasses>
-    NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
     BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLib.inf
   }
 
@@ -202,25 +188,11 @@
     FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
   }
 
-  RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf {
-  <LibraryClasses>
-    NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
-  }
+  RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
 
-  RustPkg/Test/TestRustLangApp3/TestRustLangApp.inf {
-  <LibraryClasses>
-    NULL|RustPkg/Library/MathLib/MathLib.inf
-!if $(TARGET) == RELEASE
-    TestRustLangLib|RustPkg/Test/TestRustLangLib/TestRustLangLibRelease.inf
-!else
-    TestRustLangLib|RustPkg/Test/TestRustLangLib/TestRustLangLibDebug.inf
-!endif
-  }
-  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf {
-  <LibraryClasses>
-    NULL|RustPkg/Library/CompilerLib/CompilerLib.inf
-    NULL|RustPkg/Library/MathLib/MathLib.inf
-  }
+  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
+
+  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
 
 [BuildOptions]
   MSFT:DEBUG_*_*_CC_FLAGS = /Od /Oy-
@@ -229,4 +201,3 @@
   MSFT:*_*_*_DLINK_FLAGS     = /ALIGN:4096 /FILEALIGN:4096 /SUBSYSTEM:CONSOLE
   MSFT:DEBUG_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
   MSFT:NOOPT_*_*_DLINK_FLAGS = /EXPORT:InitializeDriver=$(IMAGE_ENTRY_POINT) /BASE:0x10000
-

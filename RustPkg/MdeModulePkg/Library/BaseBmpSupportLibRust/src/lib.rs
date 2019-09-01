@@ -22,9 +22,8 @@ use r_efi::efi;
 use r_efi::efi::{Status};
 use r_efi::protocols::graphics_output::BltPixel;
 
-extern "C" {
-  // NOTE: It should be vararg. But vararg is unsupported.
-  fn DebugPrint(ErrorLevel: usize, Format: *const u8, Arg: usize);
+extern {
+  fn DebugPrint(ErrorLevel: usize, Format: *const u8, Arg: ...);
 
   fn AllocatePool (Size: usize) -> *mut c_void;
   fn AllocateZeroPool (Size: usize) -> *mut c_void;
@@ -49,7 +48,7 @@ fn panic(_info: &PanicInfo) -> ! {
 
 #[no_mangle]
 #[export_name = "TranslateBmpToGopBlt"]
-pub extern "C" fn traslate_bmp_to_gop_blt (
+pub extern fn traslate_bmp_to_gop_blt (
     bmp_image: *const c_void,
     bmp_image_size: usize,
     gop_blt : *mut *mut BltPixel,
@@ -287,7 +286,7 @@ pub extern "C" fn traslate_bmp_to_gop_blt (
 
 #[no_mangle]
 #[export_name = "TranslateGopBltToBmp"]
-pub extern "C" fn traslate_gop_blt_to_bmp (
+pub extern fn traslate_gop_blt_to_bmp (
     gop_blt : *mut BltPixel,
     pixel_height: u32,
     pixel_width: u32,

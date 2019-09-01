@@ -43,7 +43,7 @@ pub struct Ia32Descriptor {
 
 #[no_mangle]
 #[export_name = "AsmReadIdtr"]
-pub extern "C" fn asm_read_idtr (
+pub extern fn asm_read_idtr (
     idtr: *mut Ia32Descriptor
     )
 {
@@ -54,7 +54,7 @@ pub extern "C" fn asm_read_idtr (
 
 #[no_mangle]
 #[export_name = "AsmWriteIdtr"]
-pub extern "C" fn asm_write_idtr (
+pub extern fn asm_write_idtr (
     mut idtr: *mut Ia32Descriptor
     )
 {
@@ -65,7 +65,7 @@ pub extern "C" fn asm_write_idtr (
 
 #[no_mangle]
 #[export_name = "AsmDisablePaging64"]
-pub extern "C" fn asm_disable_paging_64 (
+pub extern fn asm_disable_paging_64 (
     cs: u16,
     entry_point: u32,
     context1: u32,

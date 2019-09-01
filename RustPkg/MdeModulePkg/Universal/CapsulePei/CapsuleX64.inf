@@ -44,7 +44,6 @@
   DebugLib
   CpuExceptionHandlerLib
   DebugAgentLib
-  IntrinsicLib
 
 [Depex]
   FALSE

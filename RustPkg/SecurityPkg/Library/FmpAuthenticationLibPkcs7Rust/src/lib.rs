@@ -36,12 +36,8 @@ fn panic(_info: &PanicInfo) -> ! {
     loop {}
 }
 
-extern "C" {
-  // NOTE: It should be vararg. But vararg is unsupported.
-  fn DebugPrint(ErrorLevel: usize, Format: *const u8, Arg: usize);
-
+extern {
   fn AllocatePool (Size: usize) -> *mut c_void;
-  fn AllocateZeroPool (Size: usize) -> *mut c_void;
   fn FreePool (Buffer: *mut c_void);
 
   fn Pkcs7Verify (
@@ -102,7 +98,7 @@ fn fmp_authenticated_handler_pkcs7 (
 
 #[no_mangle]
 #[export_name = "AuthenticateFmpImage"]
-pub extern "C" fn authenticate_fmp_image (
+pub extern fn authenticate_fmp_image (
     image : *mut FirmwareImageAuthentication,
     image_size: usize,
     public_key_data: *mut u8,

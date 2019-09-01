@@ -24,15 +24,6 @@ CAPSULE_FLAGS_PERSIST_ACROSS_RESET, CAPSULE_FLAGS_POPULATE_SYSTEM_TABLE, CAPSULE
 
 pub const MAX_ADDRESS: u64 = 0xFFFFFFFFFFFF;
 
-extern "C" {
-  // NOTE: It should be vararg. But vararg is unsupported.
-  fn DebugPrint(ErrorLevel: usize, Format: *const u8, Arg: usize);
-
-  fn AllocatePool (Size: usize) -> *mut c_void;
-  fn AllocateZeroPool (Size: usize) -> *mut c_void;
-  fn FreePool (Buffer: *mut c_void);
-}
-
 use core::panic::PanicInfo;
 use core::ffi::c_void;
 
@@ -502,7 +493,7 @@ fn build_capsule_descriptors (
 
 #[no_mangle]
 #[export_name = "CapsuleDataCoalesce"]
-pub extern "C" fn capsule_data_coalesce (
+pub extern fn capsule_data_coalesce (
     _: *const c_void,
     block_list_buffer: *mut PhysicalAddress,
     memory_resource : *mut MemoryResourceDescriptor,
