@@ -107,7 +107,7 @@ class BuildFile(object):
     #
     _SHELL_CMD_ = {
         "nmake" : {
-            "CP"    :   "copy /y",
+            "CP"    :   "copy /b /y",
             "MV"    :   "move /y",
             "RM"    :   "del /f /q",
             "MD"    :   "mkdir",
