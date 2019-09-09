@@ -17,6 +17,8 @@
 #![feature(alloc_error_handler)]
 #![feature(core_panic_info)]
 #![feature(asm)]
+#![feature(global_asm)]
+#![feature(naked_functions)]
 
 #![cfg_attr(not(test), no_std)]
 
@@ -42,6 +44,7 @@ pub struct Ia32Descriptor {
 }
 
 #[no_mangle]
+#[naked]
 #[export_name = "AsmReadIdtr"]
 pub extern fn asm_read_idtr (
     idtr: *mut Ia32Descriptor
@@ -53,24 +56,19 @@ pub extern fn asm_read_idtr (
 }
 
 #[no_mangle]
+#[naked]
 #[export_name = "AsmWriteIdtr"]
 pub extern fn asm_write_idtr (
     mut idtr: *mut Ia32Descriptor
     )
 {
   unsafe {
-    //asm!("sidt  ($0)" : "=m" (idtr) );
+    asm!("sidt ($0)" :: "r" (idtr) : "memory" );
   }
 }
 
-#[no_mangle]
-#[export_name = "AsmDisablePaging64"]
-pub extern fn asm_disable_paging_64 (
-    cs: u16,
-    entry_point: u32,
-    context1: u32,
-    context2: u32,
-    new_stack: u32,
-    )
-{
-}
+#[cfg(target_arch = "x86")]
+global_asm!(include_str!("Ia32/AsmDisablePaging64.S"));
+
+#[cfg(target_arch = "x86_64")]
+global_asm!(include_str!("X64/AsmDisablePaging64.S"));
