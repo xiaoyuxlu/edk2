@@ -298,6 +298,7 @@ class DscBuildData(PlatformBuildClassObject):
         self._VpdToolGuid       = None
         self._MacroDict         = None
         self.DefaultStores      = None
+        self._RustModules       = None
 
     ## Get current effective macros
     @property
@@ -827,6 +828,25 @@ class DscBuildData(PlatformBuildClassObject):
 
             self._Modules[ModuleFile] = Module
         return self._Modules
+
+    @property
+    def RustModules(self):
+        if self._RustModules is not None:
+            return self._RustModules
+        self._RustModules = []
+        RecordList = self._RawData[MODEL_META_DATA_RUST_COMPONENT, self._Arch]
+        for Record in RecordList:
+            ModuleFile = PathClass(NormPath(Record[0]), GlobalData.gWorkspace, Arch=self._Arch)
+            ModuleId = Record[6]
+            LineNo = Record[7]
+
+            # check file validation
+            ErrorCode, ErrorInfo = ModuleFile.Validate('.toml')
+            if ErrorCode != 0:
+                EdkLogger.error('build', ErrorCode, File=self.MetaFile, Line=LineNo,
+                                ExtraData=ErrorInfo)
+            self._RustModules.append(ModuleFile)
+        return self._RustModules
 
     ## Retrieve all possible library instances used in this platform
     @property

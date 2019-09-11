@@ -868,6 +868,7 @@ class DscParser(MetaFileParser):
         TAB_PCDS_DYNAMIC_EX_HII_NULL.upper()        :   MODEL_PCD_DYNAMIC_EX_HII,
         TAB_PCDS_DYNAMIC_EX_VPD_NULL.upper()        :   MODEL_PCD_DYNAMIC_EX_VPD,
         TAB_COMPONENTS.upper()                      :   MODEL_META_DATA_COMPONENT,
+        TAB_RUST_COMPONENTS.upper()                 :   MODEL_META_DATA_RUST_COMPONENT,
         TAB_DSC_DEFINES.upper()                     :   MODEL_META_DATA_HEADER,
         TAB_DSC_DEFINES_DEFINE                      :   MODEL_META_DATA_DEFINE,
         TAB_DSC_DEFINES_EDKGLOBAL                   :   MODEL_META_DATA_GLOBAL_DEFINE,
@@ -1276,6 +1277,15 @@ class DscParser(MetaFileParser):
         else:
             self._ValueList[0] = self._CurrentLine
 
+    @ParseMacro
+    def _RustComponentParser(self):
+        if self._CurrentLine[-1] == '{':
+            self._ValueList[0] = self._CurrentLine[0:-1].strip()
+            self._InSubsection = True
+            self._SubsectionType = MODEL_UNKNOWN
+        else:
+            self._ValueList[0] = self._CurrentLine
+
     ## [LibraryClasses] section
     @ParseMacro
     def _LibraryClassParser(self):
@@ -1370,6 +1380,7 @@ class DscParser(MetaFileParser):
             MODEL_PCD_DYNAMIC_EX_HII                        :   self.__ProcessPcd,
             MODEL_PCD_DYNAMIC_EX_VPD                        :   self.__ProcessPcd,
             MODEL_META_DATA_COMPONENT                       :   self.__ProcessComponent,
+            MODEL_META_DATA_RUST_COMPONENT                  :   self.__ProcessComponent,
             MODEL_META_DATA_BUILD_OPTION                    :   self.__ProcessBuildOption,
             MODEL_UNKNOWN                                   :   self._Skip,
             MODEL_META_DATA_USER_EXTENSION                  :   self._SkipUserExtension,
@@ -1732,6 +1743,7 @@ class DscParser(MetaFileParser):
         MODEL_PCD_DYNAMIC_EX_HII                        :   _PcdParser,
         MODEL_PCD_DYNAMIC_EX_VPD                        :   _PcdParser,
         MODEL_META_DATA_COMPONENT                       :   _ComponentParser,
+        MODEL_META_DATA_RUST_COMPONENT                  :   _RustComponentParser,
         MODEL_META_DATA_BUILD_OPTION                    :   _BuildOptionParser,
         MODEL_UNKNOWN                                   :   MetaFileParser._Skip,
         MODEL_META_DATA_PACKAGE                         :   MetaFileParser._PackageParser,

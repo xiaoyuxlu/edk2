@@ -29,6 +29,7 @@ from collections import OrderedDict, defaultdict
 from Common.buildoptions import BuildOption,BuildTarget
 from AutoGen.PlatformAutoGen import PlatformAutoGen
 from AutoGen.ModuleAutoGen import ModuleAutoGen
+from AutoGen.RustModuleAutoGen import RustModuleAutoGen
 from AutoGen.WorkspaceAutoGen import WorkspaceAutoGen
 from AutoGen.AutoGenWorker import AutoGenWorkerInProcess,AutoGenManager,\
     LogAgent
@@ -350,6 +351,30 @@ class ModuleMakeUnit(BuildUnit):
         BuildUnit.__init__(self, Obj, BuildCommand, Target, Dependency, Obj.MakeFileDir)
         if Target in [None, "", "all"]:
             self.Target = "tbuild"
+
+## The smallest module unit that can be built by cargo xbuild command in multi-thread build mode
+#
+# This class is for rust module build by cargo xbuild system. The "Obj" parameter
+# must provide __str__(), __eq__() and __hash__() methods. Otherwise there could
+# be make units missing build.
+#
+# Currently the "Obj" should be only RustModuleAutoGen object.
+#
+class RustModuleBuildUnit(BuildUnit):
+    ## The constructor
+    #
+    #   @param  self        The object pointer
+    #   @param  Obj         The RustModuleAutoGen object the build is working on
+    #   @param  Target      The build target name, one of gSupportedTarget
+    #
+    def __init__(self, Obj, BuildCommand,Target):
+        Dependency = []
+        BuildUnit.__init__(self, Obj, BuildCommand, Target, Dependency, Obj.MakeFileDir)
+        self.Target = ""
+        if Obj.Arch == 'X64':
+            self.Target = '--target=x86_64-unknown-uefi'
+        if Obj.Arch == 'IA32':
+            self.Target = '--target=i686-unknown-uefi'
 
 ## The smallest platform unit that can be built by nmake/make command in multi-thread build mode
 #
@@ -1923,7 +1948,6 @@ class Build():
                         # Start task scheduler
                         if not BuildTask.IsOnGoing():
                             BuildTask.StartScheduler(self.ThreadNumber, ExitFlag)
-
                     # in case there's an interruption. we need a full version of makefile for platform
                     Pa.CreateMakeFile(False)
                     if BuildTask.HasError():
@@ -2233,6 +2257,20 @@ class Build():
 
                 for Arch in Wa.ArchList:
                     MakeStart = time.time()
+
+                    for RustModulePath in Wa.Platform.RustModules:
+                        rma = RustModuleAutoGen(Wa, RustModulePath, BuildTarget, ToolChain, Arch)
+                        BuildCommand = ['cargo', 'xbuild']
+                        bu = RustModuleBuildUnit(rma, BuildCommand, "")
+                        Bt = BuildTask.New(bu)
+                        if BuildTask.HasError():
+                            ExitFlag.set()
+                            BuildTask.WaitForComplete()
+                            EdkLogger.error("build", BUILD_ERROR, "Failed to build module",
+                                            ExtraData=GlobalData.gBuildingModule)
+                        if not BuildTask.IsOnGoing():
+                            BuildTask.StartScheduler(self.ThreadNumber, ExitFlag)
+
                     for Ma in set(self.BuildModules):
                         # Generate build task for the module
                         if not Ma.IsBinaryModule:
