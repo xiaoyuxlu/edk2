@@ -14,9 +14,7 @@
 
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
-#![feature(alloc_error_handler)]
 #![feature(core_panic_info)]
-#![feature(asm)]
 
 #![cfg_attr(not(test), no_std)]
 
@@ -38,14 +36,21 @@ use core::ffi::c_void;
 use core::mem::size_of;
 use core::mem::transmute;
 
+use core::slice;
 use core::slice::from_raw_parts;
+use core::slice::from_raw_parts_mut;
 
-#[panic_handler]
-#[allow(clippy::empty_loop)]
-fn panic(_info: &PanicInfo) -> ! {
-    unsafe { asm!("int3"); }
-    loop {}
-}
+extern crate uefi_rust_panic_lib;
+extern crate uefi_rust_allocation_lib;
+
+extern crate alloc;
+
+use alloc::vec::Vec;
+use alloc::boxed::Box;
+use alloc::{
+    alloc::{handle_alloc_error, Alloc, Global, Layout},
+};
+
 
 #[no_mangle]
 #[export_name = "TestIntegerOverflow"]
@@ -230,31 +235,6 @@ pub extern fn test_buffer_borrow (
     //test_table2.r#type = 2; // error
 }
 
-use core::alloc::{GlobalAlloc, Layout, Alloc};
-
-pub struct MyAllocator;
-
-unsafe impl GlobalAlloc for MyAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-      let size = layout.size();
-      let align = layout.align();
-      if align > 8 {
-        return core::ptr::null_mut();
-      }
-      if size >= 0x800 {
-        return core::ptr::null_mut(); // BUGBUG test only.
-      }
-
-      unsafe { AllocatePool (size) as *mut u8 }
-    }
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-      unsafe { FreePool (ptr as *mut c_void); }
-    }
-}
-
-#[global_allocator]
-static ALLOCATOR: MyAllocator = MyAllocator;
-
 #[no_mangle]
 #[export_name = "TestBufferAlloc"]
 pub extern fn test_buffer_alloc (
@@ -262,27 +242,28 @@ pub extern fn test_buffer_alloc (
     )
 {
     let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(32, 4) };
-    let buffer = unsafe { ALLOCATOR.alloc (layout) };
-    unsafe {*buffer = 1 };
-    unsafe { ALLOCATOR.dealloc (buffer, layout) };
-    drop (buffer); // It is useless
-    unsafe {*buffer = 1 }; // cannot catch
+    unsafe {
+      match Global.alloc (layout) {
+        Ok(buffer) => {
+          let mut box_buffer = Box::from_raw(from_raw_parts_mut(buffer.as_ptr(), layout.size()));
+          box_buffer[0] = 1;
+          Global.dealloc (buffer, layout);
+          drop (buffer); // It is useless
+          box_buffer[0] = 1; // cannot catch
+        },
+        Err(_) => handle_alloc_error (layout),
+      }
+    }
 
     let layout = core::alloc::Layout::new::<u32>();
-    let buffer = unsafe { ALLOCATOR.alloc(layout) };
-    unsafe { ALLOCATOR.dealloc (buffer, layout) };
-}
-
-extern crate alloc;
-
-use alloc::vec::Vec;
-use alloc::boxed::Box;
-
-#[alloc_error_handler]
-fn alloc_error_handler(layout: core::alloc::Layout) -> !
-{
-    unsafe { asm!("int3"); }
-    loop {}
+    unsafe {
+      match Global.alloc (layout) {
+        Ok(buffer) => {
+          Global.dealloc (buffer, layout);
+        },
+        Err(_) => handle_alloc_error (layout),
+      }
+    }
 }
 
 fn get_box (
@@ -342,13 +323,17 @@ pub extern fn test_box_convert (
     ) -> *mut u8
 {
     let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(size, 4) };
-    let buffer = unsafe { ALLOCATOR.alloc (layout) };
+    unsafe {
+      match Global.alloc (layout) {
+        Ok(buffer) => {
+          let mut box_buffer = Box::<u8>::from_raw(from_raw_parts_mut(buffer.as_ptr(), layout.size()) as *mut [u8] as *mut u8 );
+          Global.dealloc (buffer, layout);
+          *box_buffer = 1;
+          Box::<u8>::into_raw(box_buffer)
+        },
+        Err(_) => handle_alloc_error (layout),
+      }
+    }
 
-    let mut box_buffer = unsafe { Box::<u8>::from_raw(buffer) };
 
-    unsafe { ALLOCATOR.dealloc (buffer, layout) };
-
-    *box_buffer = 1;
-
-    Box::<u8>::into_raw(box_buffer)
 }

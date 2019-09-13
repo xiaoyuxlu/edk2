@@ -1,5 +1,5 @@
 [package]
-name = "test_rust_lang_lib"
+name = "uefi_rust_panic_lib"
 version = "0.1.0"
 authors = ["Jiewen Yao <jiewen.yao@intel.com>"]
 edition = "2018"
@@ -7,8 +7,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [lib]
-name = "test_rust_lang_lib"
-#crate-type = ["rlib"]
+name = "uefi_rust_panic_lib"
 crate-type = ["rlib", "staticlib"]
 
 # the profile used for `cargo build`
@@ -18,9 +17,4 @@ panic = "abort" # disable stack unwinding on panic
 # the profile used for `cargo build --release`
 [profile.release]
 panic = "abort" # disable stack unwinding on panic
-overflow-checks = true
 
-[dependencies]
-r-efi = "2.1.0"
-uefi_rust_panic_lib = { path = "../../Library/UefiRustPanicLib" }
-uefi_rust_allocation_lib = { path = "../../Library/UefiRustAllocationLib" }

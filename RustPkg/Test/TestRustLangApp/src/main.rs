@@ -28,6 +28,9 @@
 mod mem;
 
 extern crate test_rust_lang_lib;
+extern crate uefi_rust_intrinsic_lib;
+extern crate uefi_rust_panic_lib;
+extern crate uefi_rust_allocation_lib;
 
 use r_efi::efi;
 use r_efi::efi::{Status};
@@ -40,58 +43,14 @@ use core::mem::transmute;
 
 use core::slice::from_raw_parts;
 
-//#[panic_handler]
-#[allow(clippy::empty_loop)]
-fn panic(_info: &PanicInfo) -> ! {
-    unsafe { asm!("int3"); }
-    loop {}
-}
 
-use core::alloc::{GlobalAlloc, Layout, Alloc};
-
-pub struct MyAllocator;
-
-pub static mut ST : *mut efi::SystemTable = core::ptr::null_mut();
-pub static mut BS : *mut efi::BootServices = core::ptr::null_mut();
-
-unsafe impl GlobalAlloc for MyAllocator {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-      let size = layout.size();
-      let align = layout.align();
-      if align > 8 {
-        return core::ptr::null_mut();
-      }
-
-      let mut address : *mut c_void = core::ptr::null_mut();
-      let status = ((*BS).allocate_pool) (
-                     efi::MemoryType::BootServicesData,
-                     size,
-                     &mut address as *mut *mut c_void
-                     );
-      if status != Status::SUCCESS {
-        return core::ptr::null_mut();
-      }
-      address as *mut u8
-    }
-    unsafe fn dealloc(&self, ptr: *mut u8, _layout: Layout) {
-      ((*BS).free_pool) (ptr as *mut c_void);
-    }
-}
-
-//#[global_allocator]
-static ALLOCATOR: MyAllocator = MyAllocator;
+static mut ST : *mut efi::SystemTable = core::ptr::null_mut();
+static mut BS : *mut efi::BootServices = core::ptr::null_mut();
 
 extern crate alloc;
 
 use alloc::vec::Vec;
 use alloc::boxed::Box;
-
-//#[alloc_error_handler]
-fn alloc_error_handler(layout: core::alloc::Layout) -> !
-{
-    unsafe { asm!("int3"); }
-    loop {}
-}
 
 
 #[no_mangle]
@@ -110,6 +69,9 @@ extern fn AllocatePool (size: usize) -> *mut c_void
       }
       address as *mut c_void
 }
+
+
+
 #[no_mangle]
 #[export_name = "AllocateZeroPool"]
 extern fn AllocateZeroPool (size: usize) -> *mut c_void
@@ -123,6 +85,9 @@ extern fn AllocateZeroPool (size: usize) -> *mut c_void
 
     buffer as *mut c_void
 }
+
+
+
 #[no_mangle]
 #[export_name = "FreePool"]
 extern fn FreePool (buffer: *mut c_void)
@@ -141,13 +106,15 @@ extern fn ExternInit(data: *mut usize)
 #[no_mangle]
 pub extern fn efi_main(handle: efi::Handle, system_table: *mut efi::SystemTable) -> Status
 {
+    uefi_rust_allocation_lib::init(system_table);
+
     unsafe {
       ST = system_table;
       BS = (*ST).boot_services;
     }
 
     // L"Hello World!/r/n"
-    let string_name = [
+    let string_name  = & mut [
       0x48u16, 0x65u16, 0x6cu16, 0x6cu16, 0x6fu16, 0x20u16,
       0x57u16, 0x6fu16, 0x72u16, 0x6cu16, 0x64u16, 0x21u16,
       0x0Au16, 0x0Du16, 0x00u16
