@@ -375,6 +375,8 @@ class RustModuleBuildUnit(BuildUnit):
             self.Target = '--target=x86_64-unknown-uefi'
         if Obj.Arch == 'IA32':
             self.Target = '--target=i686-unknown-uefi'
+        if Obj.Target == "RELEASE":
+            self.BuildCommand.append("--release")
 
 ## The smallest platform unit that can be built by nmake/make command in multi-thread build mode
 #
