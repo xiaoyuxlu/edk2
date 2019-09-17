@@ -3364,6 +3364,8 @@ RELEASE_*_X64_CARGO_FLAGS   = --target x86_64-unknown-uefi --release
 DEBUG_*_IA32_CARGO_FLAGS    = --target i686-unknown-uefi
 RELEASE_*_IA32_CARGO_FLAGS  = --target i686-unknown-uefi   --release
 
+*_*_*_CARGOXBUILD_NAME	= xbuild
+
 #################
 # Build rule order
 #################

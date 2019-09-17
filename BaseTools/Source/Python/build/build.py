@@ -370,13 +370,7 @@ class RustModuleBuildUnit(BuildUnit):
     def __init__(self, Obj, BuildCommand,Target):
         Dependency = []
         BuildUnit.__init__(self, Obj, BuildCommand, Target, Dependency, Obj.MakeFileDir)
-        self.Target = ""
-        if Obj.Arch == 'X64':
-            self.Target = '--target=x86_64-unknown-uefi'
-        if Obj.Arch == 'IA32':
-            self.Target = '--target=i686-unknown-uefi'
-        if Obj.Target == "RELEASE":
-            self.BuildCommand.append("--release")
+        self.Target = None
 
 ## The smallest platform unit that can be built by nmake/make command in multi-thread build mode
 #
@@ -676,7 +670,10 @@ class BuildTask:
     #
     def Start(self):
         EdkLogger.quiet("Building ... %s" % repr(self.BuildItem))
-        Command = self.BuildItem.BuildCommand + [self.BuildItem.Target]
+        if self.BuildItem.Target is None:
+            Command = self.BuildItem.BuildCommand
+        else:
+            Command = self.BuildItem.BuildCommand + [self.BuildItem.Target]
         self.BuildTread = Thread(target=self._CommandThread, args=(Command, self.BuildItem.WorkingDir))
         self.BuildTread.setName("build thread")
         self.BuildTread.setDaemon(False)
@@ -2261,9 +2258,16 @@ class Build():
                     MakeStart = time.time()
 
                     for RustModulePath in Wa.Platform.RustModules:
-                        rma = RustModuleAutoGen(Wa, RustModulePath, BuildTarget, ToolChain, Arch)
-                        BuildCommand = ['cargo', 'xbuild']
-                        bu = RustModuleBuildUnit(rma, BuildCommand, "")
+                        rma = RustModuleAutoGen(Wa, RustModulePath, BuildTarget, ToolChain, Arch, DataPipe=Pa.DataPipe)
+                        BuildCommand = "%s %s %s --manifest-path %s -Z unstable-options --out-dir %s --target-dir %s" % (
+                            Wa.ToolDefinition['CARGO']["PATH"],
+                            Wa.ToolDefinition['CARGOXBUILD']["NAME"],
+                            Wa.ToolDefinition['CARGO']['FLAGS'],
+                            rma.MetaFile.Path,
+                            rma.OutputDir,
+                            rma.BuildDir
+                        )
+                        bu = RustModuleBuildUnit(rma, BuildCommand, None)
                         Bt = BuildTask.New(bu)
                         if BuildTask.HasError():
                             ExitFlag.set()
