@@ -192,7 +192,9 @@
 
   RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
 
-  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
+[RustComponents]
+  RustPkg/Test/HelloWorld/Cargo.toml
+  RustPkg/Test/TestRustLangApp/Cargo.toml
 
 [BuildOptions]
   MSFT:DEBUG_*_*_CC_FLAGS = /Od /Oy-
