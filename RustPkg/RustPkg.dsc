@@ -190,7 +190,7 @@
 
   RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
 
-  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
+  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
 
 [RustComponents]
   RustPkg/Test/HelloWorld/Cargo.toml
