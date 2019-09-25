@@ -608,6 +608,11 @@ cleanlib:
             FileMacroList.append(self._FILE_MACRO_TEMPLATE.Replace({"macro_name": "NASM_INC", "source_file": IncludePathList}))
             break
 
+        # Add rust libraries to link file. 
+        for lib in self._AutoGenObject.LibraryRustAutoGenList:
+            if str(lib.OutPutFilePathName) not in self.ListFileMacros['STATIC_LIBRARY_FILES_LIST']:
+                self.ListFileMacros['STATIC_LIBRARY_FILES_LIST'].append(str(lib.OutPutFilePathName))
+
         # Generate macros used to represent files containing list of input files
         for ListFileMacro in self.ListFileMacros:
             ListFileName = os.path.join(MyAgo.OutputDir, "%s.lst" % ListFileMacro.lower()[:len(ListFileMacro) - 5])

@@ -2277,6 +2277,11 @@ class Build():
                         if not BuildTask.IsOnGoing():
                             BuildTask.StartScheduler(self.ThreadNumber, ExitFlag)
 
+                    # Wait for rust build complete
+                    ExitFlag.set()
+                    BuildTask.WaitForComplete()
+                    ExitFlag.clear()
+
                     for Ma in set(self.BuildModules):
                         # Generate build task for the module
                         if not Ma.IsBinaryModule:

@@ -29,6 +29,7 @@ from AutoGen.ModuleAutoGenHelper import PlatformInfo,WorkSpaceInfo
 from AutoGen.CacheIR import ModuleBuildCacheIR
 import json
 import tempfile
+from AutoGen.RustModuleAutoGen import RustModuleAutoGen
 
 ## Mapping Makefile type
 gMakeTypeMap = {TAB_COMPILER_MSFT:"nmake", "GCC":"gmake"}
@@ -1915,20 +1916,36 @@ class ModuleAutoGen(AutoGen):
     def LibraryAutoGenList(self):
         RetVal = []
         for Library in self.DependentLibraryList:
-            La = ModuleAutoGen(
-                        self.Workspace,
-                        Library.MetaFile,
-                        self.BuildTarget,
-                        self.ToolChain,
-                        self.Arch,
-                        self.PlatformInfo.MetaFile,
-                        self.DataPipe
-                        )
-            La.IsLibrary = True
-            if La not in RetVal:
-                RetVal.append(La)
-                for Lib in La.CodaTargetList:
-                    self._ApplyBuildRule(Lib.Target, TAB_UNKNOWN_FILE)
+            if type(Library).__name__ == "InfBuildData":
+                La = ModuleAutoGen(
+                            self.Workspace,
+                            Library.MetaFile,
+                            self.BuildTarget,
+                            self.ToolChain,
+                            self.Arch,
+                            self.PlatformInfo.MetaFile,
+                            self.DataPipe
+                            )
+                La.IsLibrary = True
+                if La not in RetVal:
+                    RetVal.append(La)
+                    for Lib in La.CodaTargetList:
+                        self._ApplyBuildRule(Lib.Target, TAB_UNKNOWN_FILE)
+        return RetVal
+
+    @cached_property
+    def LibraryRustAutoGenList(self):
+        RetVal = []
+        for Library in self.DependentLibraryList:
+            if type(Library).__name__ == "TomlBuildData":
+                La = RustModuleAutoGen(
+                    self.Workspace,
+                    Library.MetaFile,
+                    self.BuildTarget,
+                    self.ToolChain, self.Arch,
+                    DataPipe=self.DataPipe)
+                if La not in RetVal:
+                    RetVal.append(La)
         return RetVal
 
     def GenModuleHash(self):

@@ -31,6 +31,7 @@ from collections import defaultdict
 from .MetaFileTable import MetaFileStorage
 from .MetaFileCommentParser import CheckInfComment
 from Common.DataType import TAB_COMMENT_EDK_START, TAB_COMMENT_EDK_END
+import toml
 
 ## RegEx for finding file versions
 hexVersionPattern = re.compile(r'0[xX][\da-f-A-F]{5,8}')
@@ -2193,6 +2194,19 @@ class DecParser(MetaFileParser):
         MODEL_UNKNOWN                   :   MetaFileParser._Skip,
         MODEL_META_DATA_USER_EXTENSION  :   MetaFileParser._SkipUserExtension,
     }
+
+
+class TomlParser(MetaFileParser):
+
+    def Start(self):
+        Content = ''
+        try:
+            with open(str(self.MetaFile), 'r') as File:
+                Content = File.read()
+                self.TomlConfig = toml.loads(Content)
+        except Exception as e:
+            EdkLogger.error("Parser %s" % e.message, FILE_READ_FAILURE, ExtraData=self.MetaFile)
+        self._Done()
 
 ##
 #
