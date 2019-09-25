@@ -30,4 +30,4 @@
   MdeModulePkg/MdeModulePkg.dec
 
 [Sources]
-  Cargo.toml
+  Cargo.libtoml
