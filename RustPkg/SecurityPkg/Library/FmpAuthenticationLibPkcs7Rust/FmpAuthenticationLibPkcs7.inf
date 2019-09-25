@@ -18,7 +18,7 @@
   LIBRARY_CLASS                  = FmpAuthenticationLib
 
 [Sources]
-  Cargo.toml
+  Cargo.libtoml
 
 [Packages]
   MdePkg/MdePkg.dec
