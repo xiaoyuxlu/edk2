@@ -20,6 +20,7 @@
   SUPPORTED_ARCHITECTURES        = X64|IA32
   BUILD_TARGETS                  = DEBUG|RELEASE
   SKUID_IDENTIFIER               = DEFAULT
+  FLASH_DEFINITION               = RustPkg/RustPkg.fdf
 
 [SkuIds]
   0|DEFAULT
