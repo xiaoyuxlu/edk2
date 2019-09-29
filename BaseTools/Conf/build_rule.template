@@ -234,26 +234,27 @@
 
 [Toml-To-Lib-File]
     <InputFile>
-        ?.libtoml
+        ?.toml
 
     <OutputFile>
         $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
 
-    <Command>
-        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir $(OUTPUT_DIR) --target-dir $(OUTPUT_DIR)
+    <Command.MSFT>
+        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir \\?\$(OUTPUT_DIR) --target-dir \\?\$(OUTPUT_DIR)
         $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
 
-[Toml-To-Pe-File]
+
+[Toml-To-Lib-File.UEFI_APPLICATION]
     <InputFile>
         ?.toml
 
     <OutputFile>
         $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
 
-    <Command>
-        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(OUTPUT_DIR) --target-dir $(OUTPUT_DIR)
+    <Command.MSFT>
+        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir \\?\$(OUTPUT_DIR) --target-dir \\?\$(OUTPUT_DIR)
 		$(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
-		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)*.efi 
+		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)*.efi
 
 [Device-Tree-Source-File]
     <InputFile>
