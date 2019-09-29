@@ -75,8 +75,8 @@
   BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/Cargo.toml
   FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
 
-  #IntrinsicLib|RustPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  IntrinsicLib|RustPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  #IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
 
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
@@ -184,18 +184,17 @@
     BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLib.inf
   }
 
-  RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf
-#  RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
-#  RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf {
-#  <LibraryClasses>
-#    FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
-#  }
+  RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
+  RustPkg/Test/TestFmpAuthPkcs7App/TestFmpAuthPkcs7App.inf {
+  <LibraryClasses>
+    FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
+  }
 
   RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
 
   RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
 
-  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
+  # RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
 
 [RustComponents]
   RustPkg/Test/HelloWorld/Cargo.toml
