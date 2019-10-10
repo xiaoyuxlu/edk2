@@ -59,6 +59,7 @@ from AutoGen.DataPipe import MemoryDataPipe
 from AutoGen.ModuleAutoGenHelper import WorkSpaceInfo, PlatformInfo
 from GenFds.FdfParser import FdfParser
 
+from Common.Misc import UpdateTomlFileMTime
 
 ## standard targets of build command
 gSupportedTarget = ['all', 'genc', 'genmake', 'modules', 'libraries', 'fds', 'clean', 'cleanall', 'cleanlib', 'run']
@@ -2253,6 +2254,9 @@ class Build():
                             # There might be binary module or module which has .inc files, not count for cache miss
                             CacheNotHitMa.add(IR)
                     EdkLogger.quiet("Total module num: %s, cache hit module num: %s" % (len(CacheHitMa)+len(CacheNotHitMa), len(CacheHitMa)))
+
+                # if .tmol releated rust src changed, update .toml file's modified time
+                UpdateTomlFileMTime(os.path.join(Wa.BuildDir, 'RustFileWatch.lst'))
 
                 for Arch in Wa.ArchList:
                     MakeStart = time.time()

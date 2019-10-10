@@ -414,6 +414,7 @@ cleanlib:
     _FILE_MACRO_TEMPLATE = TemplateString("${macro_name} = ${BEGIN} \\\n    ${source_file}${END}\n")
     _BUILD_TARGET_TEMPLATE = TemplateString("${BEGIN}${target} : ${deps}\n${END}\t${cmd}\n")
 
+    _RustFileWatchList = []
     ## Constructor of ModuleMakefile
     #
     #   @param  ModuleAutoGen   Object of ModuleAutoGen class
@@ -465,6 +466,18 @@ cleanlib:
             EdkLogger.error("build", AUTOGEN_ERROR, "No files to be built in module [%s, %s, %s]"
                             % (MyAgo.BuildTarget, MyAgo.ToolChain, MyAgo.Arch),
                             ExtraData="[%s]" % str(MyAgo))
+
+        # If if rust source file change(.rs), toml file not change, make will not work for cargo
+        # So, save .toml file and check it before build.
+        for source in MyAgo.SourceFileList:
+            if source.Ext == ".toml":
+                # update toml file if src change
+                if source not in self._RustFileWatchList:
+                    self._RustFileWatchList.append(source)
+                    Context = ""
+                    for source in self._RustFileWatchList:
+                        Context += "%s\n" % str(source)
+                    SaveFileOnChange(os.path.join(MyAgo.PlatformInfo.BuildDir, 'RustFileWatch.lst'), Context, False)
 
         # convert dependent libraries to build command
         self.ProcessDependentLibrary()
