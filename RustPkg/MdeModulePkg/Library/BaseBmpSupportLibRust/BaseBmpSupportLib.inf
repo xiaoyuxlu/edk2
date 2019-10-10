@@ -19,15 +19,5 @@
   MODULE_TYPE     = BASE
   LIBRARY_CLASS   = BmpSupportLib
 
-[LibraryClasses]
-  DebugLib
-  BaseMemoryLib
-  MemoryAllocationLib
-  SafeIntLib
-
-[Packages]
-  MdePkg/MdePkg.dec
-  MdeModulePkg/MdeModulePkg.dec
-
 [Sources]
   Cargo.toml
