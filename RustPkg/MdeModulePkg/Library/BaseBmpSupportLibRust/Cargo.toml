@@ -19,7 +19,7 @@ panic = "abort" # disable stack unwinding on panic
 panic = "abort" # disable stack unwinding on panic
 
 [dependencies]
-r-efi = "2.1.0"
+r-efi = { path = "../../../External/r-efi" }
 base_lib = { path = "../../../MdePkg/Library/BaseLibRust" }
 industry_standard_include = { path = "../../../MdePkg/Include/IndustryStandardRust" }
 debug_lib = { path = "../../../MdePkg/Library/DebugLibRust" }
