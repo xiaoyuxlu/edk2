@@ -197,6 +197,8 @@
 
   RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
 
+  RustPkg/Test/HelloWorldLib/HelloWorldLib.inf
+
 [RustComponents]
   RustPkg/Test/HelloWorld/Cargo.toml
   RustPkg/Test/TestRustLangApp/Cargo.toml
