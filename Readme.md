@@ -216,10 +216,20 @@ Additional step for Windows, set CLANG_HOST_BIN=n for nmake.
 set CLANG_HOST_BIN=n
 ```
 
+4) Prebuild binary:
+
+goto RustPkg\External\r-efi
+
+```
+cargo xbuild --release --target x86_64-unknown-uefi
+cargo xbuild --target x86_64-unknown-uefi
+cargo xbuild --release --target i686-unknown-uefi
+cargo xbuild --target i686-unknown-uefi
+```
+
 ## Build
 
 Currently, we may use ways to build UEFI module with rust support.
-Finally, we want to reduce the supported ways.
 
 1) Build the rust module with Cargo.
 
@@ -232,35 +242,55 @@ cargo xbuild [--release] --target [x86_64-unknown-uefi|i686-unknown-uefi]
 
 the output is target/[x86_64-unknown-uefi|i686-unknown-uefi]/[debug|release]/test_rust_lang_app.efi
 
-2) Include the rust file in INF, and build in EDKII tools.
+This only works for UEFI application.
 
-goto RustPkg\External\r-efi
-```
-cargo xbuild --release --target x86_64-unknown-uefi
-cargo xbuild --target x86_64-unknown-uefi
-cargo xbuild --release --target i686-unknown-uefi
-cargo xbuild --target i686-unknown-uefi
-```
-
-build a normal EFI module, such as RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf,
-RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf,
-RustPkg/MdeModulePkg/Library/BaseBmpSupportLib/BaseBmpSupportLib.inf
+2) Build the rust module with EDKII tools.
 
 ```
 build -p RustPkg/RustPkg.dsc -t CLANG7WIN -a IA32 -a X64
 ```
 
-NOTE:
+We support below build combination:
 
-* If the rust file has dependency, .toml file is required and .toml file should be included in INF.
-* If the rust file is standalone, .rs file can be included in INF.
+2.1) C source + Rust source mixed in INF (Library or Module)
+
+Rust source code is supported by EDKII build rule – Rust-To-Lib-File (.rs => .lib)
+
+Limitation: Rust cannot have external dependency.
+
+2.2) Pure Rust Module only.
+
+A Cargo.toml file is added to INF file as source.
+
+Rust Module build is supported by EDKII build rule – Toml-File.RUST_MODULE (Toml => .efi)
+
+Limitation: Runtime might be a problem, not sure about virtual address translation for rust internal global variable.
+
+2.3) Pure Rust Module + Pure Rust Library with Cargo Dependency.
+
+Same as #2.
+
+The cargo dependency means the rust lib dependency declared in Cargo.toml.
+
+2.4) Pure Rust Module + C Library with EDKII Dependency.
+
+Rust Module build is supported by EDKII build rule – Toml-File (Toml => .lib) 
+
+The EDKII dependency means the EDKII lib dependency declared in INF.
+
+If a rust module is built with C, the cargo must use staticlib. Or rlib should be used.
+
+2.5) C Module + Pure Rust Library with EDKII Dependency.
+
+Rust Lib build is supported by EDKII build rule – Toml-File. (Toml => .lib) 
+
+2.6) Pure Rust Module + Pure Rust Library with EDKII Dependency.
+
+Same as #4 + #5.
+
+NOTE: Incremental build for Cargo.toml is supported. Updating .rs with cargo will trigger rebuild.
 
 ## TODO
-
-* support toml build directly, to avoid include toml in INF.
-* separate toml->lib and toml->efi.
-* eliminate target generation in source dir.
-* better incremental build.
 
 * support cross module include.
 * add more rust modules.
