@@ -232,18 +232,18 @@
     <Command>
         $(RUSTC) $(RUSTC_FLAGS) ${src} --emit link=${dst}
 
-[Toml-To-Lib-File]
+[Toml-File]
     <InputFile>
         ?.toml
 
     <OutputFile>
-        $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
+        $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
 
     <Command.MSFT>
         $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir \\?\$(OUTPUT_DIR) --target-dir \\?\$(OUTPUT_DIR)
-        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)${s_base}.lib
+        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
 
-[Toml-To-Lib-File.UEFI_APPLICATION]
+[Toml-File.RUST_MODULE]
     <InputFile>
         ?.toml
 
@@ -254,17 +254,6 @@
         $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir \\?\$(OUTPUT_DIR) --target-dir \\?\$(OUTPUT_DIR)
 		$(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
 		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)*.efi
-
-[Toml-To-Lib-File.UEFI_TOML]
-    <InputFile>
-        ?.toml
-
-    <OutputFile>
-        $(OUTPUT_DIR)(+)$(MODULE_NAME)rust.lib
-
-    <Command.MSFT>
-        $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${s_path}(+)Cargo.toml -Z unstable-options --out-dir \\?\$(OUTPUT_DIR) --target-dir \\?\$(OUTPUT_DIR)
-        $(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.a $(OUTPUT_DIR)(+)${s_dir}(+)$(MODULE_NAME)rust.lib
 
 [Device-Tree-Source-File]
     <InputFile>
