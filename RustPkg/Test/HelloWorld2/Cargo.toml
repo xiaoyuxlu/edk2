@@ -21,4 +21,4 @@ panic = "abort" # disable stack unwinding on panic
 
 
 [dependencies]
-r-efi = "2.1.0"
+r-efi = { path = "../../External/r-efi"}
