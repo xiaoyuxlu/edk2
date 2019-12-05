@@ -177,6 +177,10 @@
   gEfiMdeModulePkgTokenSpaceGuid.PcdConOutRow|L"Setup"|gEmuSystemConfigGuid|0x4|25
   gEfiMdePkgTokenSpaceGuid.PcdPlatformBootTimeOut|L"Timeout"|gEfiGlobalVariableGuid|0x0|10
 
+
+[Components.X64]
+    RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
+
 [Components]
 
   RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/BaseBmpSupportLib.inf
@@ -190,8 +194,6 @@
   <LibraryClasses>
     FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
   }
-
-  RustPkg/MdeModulePkg/Universal/CapsulePei/CapsuleX64.inf
 
   RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
 
