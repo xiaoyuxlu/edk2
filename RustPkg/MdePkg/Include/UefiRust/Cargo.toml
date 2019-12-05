@@ -20,4 +20,4 @@ panic = "abort" # disable stack unwinding on panic
 overflow-checks = true
 
 [dependencies]
-r-efi = { path = "../../../../External/r-efi"}
+r-efi = { path = "../../../External/r-efi"}
