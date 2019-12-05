@@ -42,33 +42,3 @@ pub struct Ia32Descriptor {
     pub limit: u16,
     pub base: usize,
 }
-
-#[no_mangle]
-#[naked]
-#[export_name = "AsmReadIdtr"]
-pub extern fn asm_read_idtr (
-    idtr: *mut Ia32Descriptor
-    )
-{
-  unsafe {
-    asm!("lidt ($0)" :: "r" (idtr) : "memory");
-  }
-}
-
-#[no_mangle]
-#[naked]
-#[export_name = "AsmWriteIdtr"]
-pub extern fn asm_write_idtr (
-    mut idtr: *mut Ia32Descriptor
-    )
-{
-  unsafe {
-    asm!("sidt ($0)" :: "r" (idtr) : "memory" );
-  }
-}
-
-#[cfg(target_arch = "x86")]
-global_asm!(include_str!("Ia32/AsmDisablePaging64.S"));
-
-#[cfg(target_arch = "x86_64")]
-global_asm!(include_str!("X64/AsmDisablePaging64.S"));
