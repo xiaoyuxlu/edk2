@@ -14,6 +14,7 @@ import string
 import re
 import os.path as path
 from Common.LongFilePathSupport import OpenLongFilePath as open
+from Common.LongFilePathSupport import LongFilePath
 from Common.MultipleWorkspace import MultipleWorkspace as mws
 from Common.BuildToolError import *
 from Common.Misc import *
@@ -284,6 +285,8 @@ OUTPUT_DIR = ${module_output_directory}
 DEBUG_DIR = ${module_debug_directory}
 DEST_DIR_OUTPUT = $(OUTPUT_DIR)
 DEST_DIR_DEBUG = $(DEBUG_DIR)
+
+CARGO_OUTPUT_DIR = ${cargo_module_output_directory}
 
 #
 # Shell Command Macro
@@ -693,6 +696,7 @@ cleanlib:
             "platform_build_directory"  : self.PlatformInfo.BuildDir,
             "module_build_directory"    : MyAgo.BuildDir,
             "module_output_directory"   : MyAgo.OutputDir,
+            "cargo_module_output_directory": LongFilePath(MyAgo.OutputDir),
             "module_debug_directory"    : MyAgo.DebugDir,
 
             "separator"                 : Separator,
@@ -1328,6 +1332,7 @@ ${BEGIN}\t-@${create_directory_command}\n${END}\
             "platform_build_directory"  : self.PlatformInfo.BuildDir,
             "module_build_directory"    : MyAgo.BuildDir,
             "module_output_directory"   : MyAgo.OutputDir,
+            "cargo_module_output_directory": LongFilePath(MyAgo.OutputDir),
             "module_debug_directory"    : MyAgo.DebugDir,
 
             "separator"                 : Separator,
