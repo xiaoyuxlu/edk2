@@ -76,8 +76,8 @@
   BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/Cargo.toml
   FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
 
-  IntrinsicLib|RustPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  #IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  #IntrinsicLib|RustPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
 
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
