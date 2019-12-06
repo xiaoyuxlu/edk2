@@ -2,221 +2,43 @@
 
 **This project is an experiment and should not be used production workloads.**
 
-# Build Status
+### Preface
 
-<table>
-  <tr>
-    <th>Host Type</th>
-    <th>Toolchain</th>
-    <th>Branch</th>
-    <th>Build Status</th>
-    <th>Test Status</th>
-    <th>Code Coverage</th>
-  </tr>
-  <tr>
-    <td>Windows</td>
-    <td>VS2019</td>
-    <td>master</td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
-      <img src="https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/Windows%20VS2019%20CI?branchName=master"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
-      <img src="https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/32.svg"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
-      <img src="https://img.shields.io/badge/coverage-coming_soon-blue"/></a>
-    </td>
-  </tr>
-  <tr>
-    <td>Ubuntu</td>
-    <td>GCC</td>
-    <td>master</td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
-      <img src="https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/Ubuntu%20GCC5%20CI?branchName=master"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
-      <img src="https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/31.svg"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
-      <img src="https://img.shields.io/badge/coverage-coming_soon-blue"/></a>
-    </td>
-  </tr>
-</table>
+For rust, we use x86_64-unknown-uefi and i686-unknown-uefi target to generate PE library or .efi image in Windows or Linux.
 
-[More CI Build information](.pytool/Readme.md)
+For C code, we use LLVM9 toolchain to generate PE binary in Windows or Linux.
 
-# License Details
+For asm, we use nasm in Windows or Linux.
 
-The majority of the content in the EDK II open source project uses a
-[BSD-2-Clause Plus Patent License](License.txt).  The EDK II open source project
-contains the following components that are covered by additional licenses:
-* [BaseTools/Source/C/BrotliCompress](BaseTools/Source/C/BrotliCompress/LICENSE)
-* [MdeModulePkg/Library/BrotliCustomDecompressLib](MdeModulePkg/Library/BrotliCustomDecompressLib/LICENSE)
-* [BaseTools/Source/C/LzmaCompress](BaseTools/Source/C/LzmaCompress/LZMA-SDK-README.txt)
-* [MdeModulePkg/Library/LzmaCustomDecompressLib](MdeModulePkg/Library/LzmaCustomDecompressLib/LZMA-SDK-README.txt)
-* [IntelFrameworkModulePkg/Library/LzmaCustomDecompressLib/Sdk](IntelFrameworkModulePkg/Library/LzmaCustomDecompressLib/LZMA-SDK-README.txt)
-* [BaseTools/Source/C/VfrCompile/Pccts](BaseTools/Source/C/VfrCompile/Pccts/RIGHTS)
-* [MdeModulePkg/Universal/RegularExpressionDxe/Oniguruma](MdeModulePkg/Universal/RegularExpressionDxe/Oniguruma/README)
-* [OvmfPkg](OvmfPkg/License.txt)
-* [CryptoPkg/Library/OpensslLib/openssl](https://github.com/openssl/openssl/blob/50eaac9f3337667259de725451f201e784599687/LICENSE)
-* [ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3](https://github.com/ucb-bar/berkeley-softfloat-3/blob/b64af41c3276f97f0e181920400ee056b9c88037/COPYING.txt)
+### How to use
 
-1) Install rust
+#### Pre-Requisite
 
-1.1) download the source code
+##### Rust Tool
 
-We need add patch for i686-unknown-uefi target. (https://github.com/jyao1/rust)
+1) Install rust using installer.
 
-1.2) follow readme.md to generate config.toml.
+Goto https://www.rust-lang.org/tools/install for windows or linux
 
-NOTE:
+Rust version should be *nightly*. 
 
-* set lld = true to build rust-lld.
-* set extended = true to build rust-lld.
-* set docs = false to save build time.
+You can also set profile to minimal install.
 
-Linux OS:
+Then you should use blow command to install rust-src component
 
-* set prefix, sysconfdir = <local dir> in Linux OS.
+```rustup component add rust-src```
 
-Windows OS:
+**Or (install from source)**
 
-* set python = "python" in Windows OS.
-* set buid, host, target = x86_64-pc-windows-msvc in Windows OS.
-* set allow-old-toolchain = true , if visual studio < vs2019
+You can install rust from source code **this is not recommend** 
 
-1.3) follow readme.md to build the source.
-
-```
-./x.py build
-```
-
-1.4) Install rust and cargo.
-
-1.4.1) For Linux OS:
-
-Use below commend to install.
-
-```
-./x.py install
-./x.py install cargo
-```
-
-* rustc is at <prefix>/bin.
-* rust-lld is at <prefix>/lib/rustlib/x86_64-unknown-linux-gnu/bin.
-
-```
-export RUST_PREFIX=<rust install dir>
-export PATH=$RUST_PREFIX/bin:$RUST_PREFIX/lib/rustlib/x86_64-unknown-linux-gnu/bin:$PATH
-export RUST_SRC=<rust> # modify to the rust git.
-export XARGO_RUST_SRC=$RUST_SRC/src
-```
-
-1.4.2) For Windows OS:
-
-Set CARGO_HOME environment (default to ~/.cargo.  windows example: c:\users\<user>\.cargo)
-
-Add binary location to PATH (Assume RUST_SRC=<rust> @REM modify to the rust git.)
-
-* rustc.exe toolchain is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
-* cargo.exe and tools is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin
-
-```
-set RUST_SRC=<rust> @REM modify to the rust git.
-set CARGO_HOME=c:\work\.cargo
-set PATH=%CARGO_HOME%\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin;%PATH%
-set XARGO_RUST_SRC=%RUST_SRC%\src
-```
-
-Other way:
-Copy cargo.exe from %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin to %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
-
-```
-set RUST_SRC=<rust> @REM modify to the rust git.
-rustup toolchain link rust-uefi %RUST_SRC%x\build\x86_64-pc-windows-msvc\stage2
-rustup default rust-uefi
-set XARGO_RUST_SRC=%RUST_SRC%\src
-```
-
-1.5) Intall xbuild
+2) Install cargo-xbuild
 
 ```
 cargo install cargo-xbuild
 ```
 
-3) Compile the rust library + EDKII
-
-* `Repository` is the identifier of the repository the patch applies.
-  This identifier should only be provided for repositories other than
-  `edk2`. For example `edk2-BuildSpecification` or `staging`.
-* `Branch` is the identifier of the branch the patch applies. This
-  identifier should only be provided for branches other than `edk2/master`.
-  For example `edk2/UDK2015`, `edk2-BuildSpecification/release/1.27`, or
-  `staging/edk2-test`.
-* `Module` is a short identifier for the affected code or documentation. For
-  example `MdePkg`, `MdeModulePkg/UsbBusDxe`, `Introduction`, or
-  `EDK II INF File Format`.
-* `Brief-single-line-summary` is a short summary of the change.
-* The entire first line should be less than ~70 characters.
-* `Full-commit-message` a verbose multiple line comment describing
-  the change.  Each line should be less than ~70 characters.
-* `Signed-off-by` is the contributor's signature identifying them
-  by their real/legal name and their email address.
-
-# Submodules
-
-Submodule in EDK II is allowed but submodule chain should be avoided
-as possible as we can. Currently EDK II contains the following submodules
-
-- CryptoPkg/Library/OpensslLib/openssl
-- ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3
-
-ArmSoftFloatLib is actually required by OpensslLib. It's inevitable
-in openssl-1.1.1 (since stable201905) for floating point parameter
-conversion, but should be dropped once there's no such need in future
-release of openssl.
-
-To get a full, buildable EDK II repository, use following steps of git
-command
-
-```
-cargo xbuild [--release]
-```
-
-the output is target/[debug|release]/base_bmp_support_lib_rust.lib
-
-2.4.2) For Windows OS:
-
-Add binary location to PATH (Assume LLVM_SRC=<llvm-project> @REM modify to the llvm-project git.)
-
-* clang and lld-link are at %LLVM_SRC%\build\Release\bin.
-
-```
-set LLVM_SRC=<llvm-project> @REM modify to the llvm-project git.
-set PATH=%LLVM_SRC%\build\Release\bin;%PATH%
-```
-
-3) Prepare EDKII
-
-Copy RustPkg/Override/BaseTools/Conf/build_rule.template to Conf/build_rule.txt.
-
-Copy RustPkg/Override/BaseTools/Conf/tools_def.template to Conf/tools_def.txt.
-
-Set CLANG7WIN_BIN variable to the binary path, if they are not in PATH.
-
-Additional step for Windows, set CLANG_HOST_BIN=n for nmake.
-
-```
-set CLANG_HOST_BIN=n
-```
-
-4) Prebuild binary:
+3) Prebuild binary
 
 goto RustPkg\External\r-efi
 
@@ -227,72 +49,206 @@ cargo xbuild --release --target i686-unknown-uefi
 cargo xbuild --target i686-unknown-uefi
 ```
 
-## Build
+##### LLVM9
+
+REF: https://github.com/tianocore/tianocore.github.io/wiki/CLANG9-Tools-Chain
+
+1) Install LLVM9.0.0 from
+  
+http://releases.llvm.org/download.html#9.0.0
+
+2) set Enviroment
+
+```
+set CLANG_HOST_BIN=n
+set CLANG_BIN=C:\Program Files\LLVM\bin\
+```
+
+or
+
+```
+export CLANG_BIN=/home/your_llvm_bin_path
+```
+
+#### Build
 
 Currently, we may use ways to build UEFI module with rust support.
 
-1) Build the rust module with Cargo.
+1. Build the rust module with Cargo.
 
-go to rust folder, such as RustPkg\Test\TestRustLangApp,
-RustPkg\MdeModulePkg\Universal\CapsulePei
+  go to rust folder, such as RustPkg\Test\TestRustLangApp, RustPkg\MdeModulePkg\Universal\CapsulePei
 
-```
-cargo xbuild [--release] --target [x86_64-unknown-uefi|i686-unknown-uefi]
-```
+  ```
+  cargo xbuild [--release] --target [x86_64-unknown-uefi|i686-unknown-uefi]
+  ```
 
-the output is target/[x86_64-unknown-uefi|i686-unknown-uefi]/[debug|release]/test_rust_lang_app.efi
+  the output is target/[x86_64-unknown-uefi|i686-unknown-uefi]/[debug|release]/test_rust_lang_app.efi
 
-This only works for UEFI application.
+  This only works for UEFI application.
 
-2) Build the rust module with EDKII tools.
+2. Build the rust module with EDKII tools.
 
-```
-build -p RustPkg/RustPkg.dsc -t CLANG7WIN -a IA32 -a X64
-```
+  ```
+  build -p RustPkg/RustPkg.dsc -t CLANGPDB -a IA32
+  build -p RustPkg/RustPkg.dsc -t CLANGPDB -a X64
+  ``` 
 
-We support below build combination:
+### Supported Build combination
 
-2.1) C source + Rust source mixed in INF (Library or Module)
+1. C source + Rust source mixed in INF (Library or Module)
+  
+  Rust source code is supported by EDKII build rule â€“ Rust-To-Lib-File (.rs => .lib)
+  
+  **Limitation: Rust cannot have external dependency.**
 
-Rust source code is supported by EDKII build rule – Rust-To-Lib-File (.rs => .lib)
+2. Pure Rust Module only.
+   
+   A Cargo.toml file is added to INF file as source.
 
-Limitation: Rust cannot have external dependency.
+   Rust Module build is supported by EDKII build rule â€“ Toml-File.RUST_MODULE (Toml => .efi)
 
-2.2) Pure Rust Module only.
+   Limitation: Runtime might be a problem, not sure about virtual address translation for rust internal global variable.
 
-A Cargo.toml file is added to INF file as source.
+3. Pure Rust Module + Pure Rust Library with Cargo Dependency.
+   
+  The cargo dependency means the rust lib dependency declared in Cargo.toml.
 
-Rust Module build is supported by EDKII build rule – Toml-File.RUST_MODULE (Toml => .efi)
+4. Pure Rust Module + C Library with EDKII Dependency.
 
-Limitation: Runtime might be a problem, not sure about virtual address translation for rust internal global variable.
+  Rust Module build is supported by EDKII build rule â€“ Toml-File (Toml => .lib)
 
-2.3) Pure Rust Module + Pure Rust Library with Cargo Dependency.
+  The EDKII dependency means the EDKII lib dependency declared in INF.
 
-Same as #2.
+  If a rust module is built with C, the cargo must use staticlib. Or rlib should be used.
 
-The cargo dependency means the rust lib dependency declared in Cargo.toml.
+5.  C Module + Pure Rust Library with EDKII Dependency.
 
-2.4) Pure Rust Module + C Library with EDKII Dependency.
+  Rust Lib build is supported by EDKII build rule â€“ Toml-File. (Toml => .lib)
 
-Rust Module build is supported by EDKII build rule – Toml-File (Toml => .lib) 
+6. Pure Rust Module + Pure Rust Library with EDKII Dependency.
+  
+  Same as #4 + #5.
 
-The EDKII dependency means the EDKII lib dependency declared in INF.
-
-If a rust module is built with C, the cargo must use staticlib. Or rlib should be used.
-
-2.5) C Module + Pure Rust Library with EDKII Dependency.
-
-Rust Lib build is supported by EDKII build rule – Toml-File. (Toml => .lib) 
-
-2.6) Pure Rust Module + Pure Rust Library with EDKII Dependency.
-
-Same as #4 + #5.
-
-NOTE: Incremental build for Cargo.toml is supported. Updating .rs with cargo will trigger rebuild.
-
-## TODO
+### TODO
 
 * support cross module include.
 * add more rust modules.
 
-* The full LLVM enabling is out of scope of this task. It is handled by EDKII trunk.
+
+### Appendix A: Build Rust from source
+
+1. download the source code
+
+https://github.com/rust-lang/rust
+
+2. follow readme.md to generate config.toml.
+
+NOTE:
+
+    set lld = true to build rust-lld.
+    set extended = true to build rust-lld.
+    set docs = false to save build time.
+
+Linux OS:
+
+    set prefix, sysconfdir = in Linux OS.
+
+Windows OS:
+
+    set python = "python" in Windows OS.
+    set buid, host, target = x86_64-pc-windows-msvc in Windows OS.
+    set allow-old-toolchain = true , if visual studio < vs2019
+
+3. follow readme.md to build the source.
+
+./x.py build
+
+4. Install rust and cargo.
+
+a) For Linux OS:
+
+Use below commend to install.
+
+./x.py install
+./x.py install cargo
+
+    rustc is at /bin.
+    rust-lld is at /lib/rustlib/x86_64-unknown-linux-gnu/bin.
+
+export RUST_PREFIX=<rust install dir>
+export PATH=$RUST_PREFIX/bin:$RUST_PREFIX/lib/rustlib/x86_64-unknown-linux-gnu/bin:$PATH
+export RUST_SRC=<rust> # modify to the rust git.
+export XARGO_RUST_SRC=$RUST_SRC/src
+
+b) For Windows OS:
+
+Set CARGO_HOME environment (default to ~/.cargo. windows example: c:\users<user>.cargo)
+
+Add binary location to PATH (Assume RUST_SRC= @REM modify to the rust git.)
+
+    rustc.exe toolchain is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
+    cargo.exe and tools is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin
+
+set RUST_SRC=<rust> @REM modify to the rust git.
+set CARGO_HOME=c:\work\.cargo
+set PATH=%CARGO_HOME%\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin;%PATH%
+set XARGO_RUST_SRC=%RUST_SRC%\src
+
+Other way: Copy cargo.exe from %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin to %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
+
+set RUST_SRC=<rust> @REM modify to the rust git.
+rustup toolchain link rust-uefi %RUST_SRC%x\build\x86_64-pc-windows-msvc\stage2
+rustup default rust-uefi
+set XARGO_RUST_SRC=%RUST_SRC%\src
+
+### Appendix B: Build LLVM from source
+
+1. download the source.
+
+Follow http://clang.llvm.org/get_started.html
+
+2. configure
+
+Linux OS:
+
+cmake -DLLVM_ENABLE_PROJECTS="clang;lld" -G "Unix Makefiles" ../llvm
+
+Windows OS: (assume using VS2017)
+
+cmake -DLLVM_ENABLE_PROJECTS="clang;lld" -G "Visual Studio 15 2017" -A x64 -Thost=x64 ..\llvm
+
+NOTE:
+
+    use LLVM_ENABLE_PROJECTS=clang to build clang.
+    use LLVM_ENABLE_PROJECTS=lld to build lld-link. (https://lld.llvm.org/)
+    use CMAKE_BUILD_TYPE=Release to build release version. (https://llvm.org/docs/CMake.html)
+
+3. build the source
+
+Linux OS:
+
+make
+
+Windows OS: (please use release build, the debug build is very slow.)
+
+devenv LLVM.sln /Build Release /Project ALL_BUILD
+
+4. install
+
+a) For Linux OS:
+
+Add binary location to PATH (Assume LLVM_SRC= # modify to the llvm-project git.)
+
+    clang and lld-link are at $LLVM_SRC/build/bin.
+
+export LLVM_SRC=<llvm-project> # modify to the llvm-project git.
+export PATH=$LLVM_SRC/build/bin;$PATH
+
+b) For Windows OS:
+
+Add binary location to PATH (Assume LLVM_SRC= @REM modify to the llvm-project git.)
+
+    clang and lld-link are at %LLVM_SRC%\build\Release\bin.
+
+set LLVM_SRC=<llvm-project> @REM modify to the llvm-project git.
+set PATH=%LLVM_SRC%\build\Release\bin;%PATH%
