@@ -144,7 +144,7 @@ class BuildFile(object):
     ## cp if exist
     _CP_TEMPLATE_ = {
         "nmake" :   'if exist %(Src)s $(CP) %(Src)s %(Dst)s',
-        "gmake" :   "test -f %(Src)s && $(CP) %(Src)s %(Dst)s"
+        "gmake" :   "if [ -f %(Src)s ]; then $(CP) %(Src)s %(Dst)s ;fi"
     }
 
     _CD_TEMPLATE_ = {
