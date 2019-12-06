@@ -253,7 +253,7 @@
     <Command>
         $(CARGO) xbuild $(CARGO_FLAGS) --manifest-path ${src} -Z unstable-options --out-dir $(CARGO_OUTPUT_DIR) --target-dir $(CARGO_OUTPUT_DIR)
 		$(CP) $(OUTPUT_DIR)(+)${s_dir}(+)*.efi $(OUTPUT_DIR)(+)$(MODULE_NAME).efi
-		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)*.efi
+		$(CP) $(OUTPUT_DIR)(+)$(MODULE_NAME).efi $(BIN_DIR)(+)$(MODULE_NAME).efi
 
 [Device-Tree-Source-File]
     <InputFile>
