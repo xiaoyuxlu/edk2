@@ -1,232 +1,265 @@
-# EDK II Project
+# Rust for EDKII
 
-A modern, feature-rich, cross-platform firmware development environment
-for the UEFI and PI specifications from www.uefi.org.
+**This project is an experiment and should not be used production workloads.**
 
-# Build Status
+### Background
 
-<table>
-  <tr>
-    <th>Host Type</th>
-    <th>Toolchain</th>
-    <th>Branch</th>
-    <th>Build Status</th>
-    <th>Test Status</th>
-    <th>Code Coverage</th>
-  </tr>
-  <tr>
-    <td>Windows</td>
-    <td>VS2019</td>
-    <td>master</td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
-      <img src="https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/Windows%20VS2019%20CI?branchName=master"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
-      <img src="https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/32.svg"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=32&branchName=master">
-      <img src="https://img.shields.io/badge/coverage-coming_soon-blue"/></a>
-    </td>
-  </tr>
-  <tr>
-    <td>Ubuntu</td>
-    <td>GCC</td>
-    <td>master</td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
-      <img src="https://dev.azure.com/tianocore/edk2-ci/_apis/build/status/Ubuntu%20GCC5%20CI?branchName=master"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
-      <img src="https://img.shields.io/azure-devops/tests/tianocore/edk2-ci/31.svg"/></a>
-    </td>
-    <td>
-      <a  href="https://dev.azure.com/tianocore/edk2-ci/_build/latest?definitionId=31&branchName=master">
-      <img src="https://img.shields.io/badge/coverage-coming_soon-blue"/></a>
-    </td>
-  </tr>
-</table>
+There have been various instances of advocacy https://msrc-blog.microsoft.com/2019/11/07/using-rust-in-windows/ for building system level software in Rust https://www.rust-lang.org/.
+Given the ability to migrate components to Rust incrementally, we are trying to add support for building EDKII components in Rust as the first step.
 
-[More CI Build information](.pytool/Readme.md)
+### Branch Description
 
-# License Details
+The code base of development is **edk2-stable201911** tag.
 
-The majority of the content in the EDK II open source project uses a
-[BSD-2-Clause Plus Patent License](License.txt).  The EDK II open source project
-contains the following components that are covered by additional licenses:
-* [BaseTools/Source/C/BrotliCompress](BaseTools/Source/C/BrotliCompress/LICENSE)
-* [MdeModulePkg/Library/BrotliCustomDecompressLib](MdeModulePkg/Library/BrotliCustomDecompressLib/LICENSE)
-* [BaseTools/Source/C/LzmaCompress](BaseTools/Source/C/LzmaCompress/LZMA-SDK-README.txt)
-* [MdeModulePkg/Library/LzmaCustomDecompressLib](MdeModulePkg/Library/LzmaCustomDecompressLib/LZMA-SDK-README.txt)
-* [IntelFrameworkModulePkg/Library/LzmaCustomDecompressLib/Sdk](IntelFrameworkModulePkg/Library/LzmaCustomDecompressLib/LZMA-SDK-README.txt)
-* [BaseTools/Source/C/VfrCompile/Pccts](BaseTools/Source/C/VfrCompile/Pccts/RIGHTS)
-* [MdeModulePkg/Universal/RegularExpressionDxe/Oniguruma](MdeModulePkg/Universal/RegularExpressionDxe/Oniguruma/README)
-* [OvmfPkg](OvmfPkg/License.txt)
-* [CryptoPkg/Library/OpensslLib/openssl](https://github.com/openssl/openssl/blob/50eaac9f3337667259de725451f201e784599687/LICENSE)
-* [ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3](https://github.com/ucb-bar/berkeley-softfloat-3/blob/b64af41c3276f97f0e181920400ee056b9c88037/COPYING.txt)
+This branch owner: Jiewen Yao <[jiewen.yao@intel.com](mailto:jiewen.yao@intel.com)>
 
-The EDK II Project is composed of packages.  The maintainers for each package
-are listed in [Maintainers.txt](Maintainers.txt).
+### Preface
 
-# Resources
-* [TianoCore](http://www.tianocore.org)
-* [EDK II](https://github.com/tianocore/tianocore.github.io/wiki/EDK-II)
-* [Getting Started with EDK II](https://github.com/tianocore/tianocore.github.io/wiki/Getting-Started-with-EDK-II)
-* [Mailing Lists](https://github.com/tianocore/tianocore.github.io/wiki/Mailing-Lists)
-* [TianoCore Bugzilla](https://bugzilla.tianocore.org)
-* [How To Contribute](https://github.com/tianocore/tianocore.github.io/wiki/How-To-Contribute)
-* [Release Planning](https://github.com/tianocore/tianocore.github.io/wiki/EDK-II-Release-Planning)
+For rust, we use x86_64-unknown-uefi and i686-unknown-uefi target to generate PE library or .efi image in Windows or Linux.
 
-# Code Contributions
-To make a contribution to a TianoCore project, follow these steps.
-1. Create a change description in the format specified below to
-   use in the source control commit log.
-2. Your commit message must include your `Signed-off-by` signature
-3. Submit your code to the TianoCore project using the process
-   that the project documents on its web page.  If the process is
-   not documented, then submit the code on development email list
-   for the project.
-4. It is preferred that contributions are submitted using the same
-   copyright license as the base project. When that is not possible,
-   then contributions using the following licenses can be accepted:
-   * BSD (2-clause): http://opensource.org/licenses/BSD-2-Clause
-   * BSD (3-clause): http://opensource.org/licenses/BSD-3-Clause
-   * MIT: http://opensource.org/licenses/MIT
-   * Python-2.0: http://opensource.org/licenses/Python-2.0
-   * Zlib: http://opensource.org/licenses/Zlib
+For C code, we use LLVM9 toolchain to generate PE binary in Windows or Linux.
 
-   For documentation:
-   * FreeBSD Documentation License
-     https://www.freebsd.org/copyright/freebsd-doc-license.html
+For asm, we use nasm in Windows or Linux.
 
-   Contributions of code put into the public domain can also be
-   accepted.
+### How to use
 
-   Contributions using other licenses might be accepted, but further
-   review will be required.
+#### Pre-Requisite
 
-# Developer Certificate of Origin
+##### Rust Tool
 
-Your change description should use the standard format for a
-commit message, and must include your `Signed-off-by` signature.
+1) Install rust using installer.
 
-In order to keep track of who did what, all patches contributed must
-include a statement that to the best of the contributor's knowledge
-they have the right to contribute it under the specified license.
+Goto https://www.rust-lang.org/tools/install for windows or linux
 
-The test for this is as specified in the [Developer's Certificate of
-Origin (DCO) 1.1](https://developercertificate.org/). The contributor
-certifies compliance by adding a line saying
+Rust version should be *nightly*. 
 
-  Signed-off-by: Developer Name <developer@example.org>
+You can also set profile to minimal install.
 
-where `Developer Name` is the contributor's real name, and the email
-address is one the developer is reachable through at the time of
-contributing.
+Then you should use blow command to install rust-src component
+
+```rustup component add rust-src```
+
+**Or (install from source)**
+
+You can install rust from source code **this is not recommend** 
+
+2) Install cargo-xbuild
 
 ```
-Developer's Certificate of Origin 1.1
-
-By making a contribution to this project, I certify that:
-
-(a) The contribution was created in whole or in part by me and I
-    have the right to submit it under the open source license
-    indicated in the file; or
-
-(b) The contribution is based upon previous work that, to the best
-    of my knowledge, is covered under an appropriate open source
-    license and I have the right under that license to submit that
-    work with modifications, whether created in whole or in part
-    by me, under the same open source license (unless I am
-    permitted to submit under a different license), as indicated
-    in the file; or
-
-(c) The contribution was provided directly to me by some other
-    person who certified (a), (b) or (c) and I have not modified
-    it.
-
-(d) I understand and agree that this project and the contribution
-    are public and that a record of the contribution (including all
-    personal information I submit with it, including my sign-off) is
-    maintained indefinitely and may be redistributed consistent with
-    this project or the open source license(s) involved.
+cargo install cargo-xbuild
 ```
 
-# Sample Change Description / Commit Message
+3) Prebuild binary
+
+goto RustPkg\External\r-efi
 
 ```
-From: Contributor Name <contributor@example.com>
-Subject: [Repository/Branch PATCH] Pkg-Module: Brief-single-line-summary
-
-Full-commit-message
-
-Signed-off-by: Contributor Name <contributor@example.com>
+cargo xbuild --release --target x86_64-unknown-uefi
+cargo xbuild --target x86_64-unknown-uefi
+cargo xbuild --release --target i686-unknown-uefi
+cargo xbuild --target i686-unknown-uefi
 ```
 
-## Notes for sample patch email
+##### LLVM9
 
-* The first line of commit message is taken from the email's subject
-  line following `[Repository/Branch PATCH]`. The remaining portion of the
-  commit message is the email's content.
-* `git format-patch` is one way to create this format
+REF: https://github.com/tianocore/tianocore.github.io/wiki/CLANG9-Tools-Chain
 
-## Definitions for sample patch email
+1) Install LLVM9.0.0 from
+  
+http://releases.llvm.org/download.html#9.0.0
 
-* `Repository` is the identifier of the repository the patch applies.
-  This identifier should only be provided for repositories other than
-  `edk2`. For example `edk2-BuildSpecification` or `staging`.
-* `Branch` is the identifier of the branch the patch applies. This
-  identifier should only be provided for branches other than `edk2/master`.
-  For example `edk2/UDK2015`, `edk2-BuildSpecification/release/1.27`, or
-  `staging/edk2-test`.
-* `Module` is a short identifier for the affected code or documentation. For
-  example `MdePkg`, `MdeModulePkg/UsbBusDxe`, `Introduction`, or
-  `EDK II INF File Format`.
-* `Brief-single-line-summary` is a short summary of the change.
-* The entire first line should be less than ~70 characters.
-* `Full-commit-message` a verbose multiple line comment describing
-  the change.  Each line should be less than ~70 characters.
-* `Signed-off-by` is the contributor's signature identifying them
-  by their real/legal name and their email address.
-
-# Submodules
-
-Submodule in EDK II is allowed but submodule chain should be avoided
-as possible as we can. Currently EDK II contains the following submodules
-
-- CryptoPkg/Library/OpensslLib/openssl
-- ArmPkg/Library/ArmSoftFloatLib/berkeley-softfloat-3
-
-ArmSoftFloatLib is actually required by OpensslLib. It's inevitable
-in openssl-1.1.1 (since stable201905) for floating point parameter
-conversion, but should be dropped once there's no such need in future
-release of openssl.
-
-To get a full, buildable EDK II repository, use following steps of git
-command
+2) set Enviroment
 
 ```
-$ git clone https://github.com/tianocore/edk2.git
-$ cd edk2
-$ git submodule update --init
-$ cd ..
+set CLANG_HOST_BIN=n
+set CLANG_BIN=C:\Program Files\LLVM\bin\
 ```
 
-If there's update for submodules, use following git commands to get the
-latest submodules code.
+or
 
 ```
-$ cd edk2
-$ git pull
-$ git submodule update
+export CLANG_BIN=/home/your_llvm_bin_path
 ```
 
-Note: When cloning submodule repos, '--recursive' option is not
-recommended. EDK II itself will not use any code/feature from
-submodules in above submodules. So using '--recursive' adds a
-dependency on being able to reach servers we do not actually want
-any code from, as well as needlessly downloading code we will not
-use.
+#### Build
+
+Currently, we may use ways to build UEFI module with rust support.
+
+1. Build the rust module with Cargo.
+
+  go to rust folder, such as RustPkg\Test\TestRustLangApp, RustPkg\MdeModulePkg\Universal\CapsulePei
+
+  ```
+  cargo xbuild [--release] --target [x86_64-unknown-uefi|i686-unknown-uefi]
+  ```
+
+  the output is target/[x86_64-unknown-uefi|i686-unknown-uefi]/[debug|release]/test_rust_lang_app.efi
+
+  This only works for UEFI application.
+
+2. Build the rust module with EDKII tools.
+
+  ```
+  build -p RustPkg/RustPkg.dsc -t CLANGPDB -a IA32
+  build -p RustPkg/RustPkg.dsc -t CLANGPDB -a X64
+  ``` 
+
+### Supported Build combination
+
+1. C source + Rust source mixed in INF (Library or Module)
+  
+  Rust source code is supported by EDKII build rule – Rust-To-Lib-File (.rs => .lib)
+  
+  **Limitation: Rust cannot have external dependency.**
+
+2. Pure Rust Module only.
+   
+   A Cargo.toml file is added to INF file as source.
+
+   Rust Module build is supported by EDKII build rule – Toml-File.RUST_MODULE (Toml => .efi)
+
+   Limitation: Runtime might be a problem, not sure about virtual address translation for rust internal global variable.
+
+3. Pure Rust Module + Pure Rust Library with Cargo Dependency.
+   
+  The cargo dependency means the rust lib dependency declared in Cargo.toml.
+
+4. Pure Rust Module + C Library with EDKII Dependency.
+
+  Rust Module build is supported by EDKII build rule – Toml-File (Toml => .lib)
+
+  The EDKII dependency means the EDKII lib dependency declared in INF.
+
+  If a rust module is built with C, the cargo must use staticlib. Or rlib should be used.
+
+5.  C Module + Pure Rust Library with EDKII Dependency.
+
+  Rust Lib build is supported by EDKII build rule – Toml-File. (Toml => .lib)
+
+6. Pure Rust Module + Pure Rust Library with EDKII Dependency.
+  
+  Same as #4 + #5.
+
+### TODO
+
+* support cross module include.
+* add more rust modules.
+
+
+### Appendix A: Build Rust from source
+
+1. download the source code
+
+https://github.com/rust-lang/rust
+
+2. follow readme.md to generate config.toml.
+
+NOTE:
+
+    set lld = true to build rust-lld.
+    set extended = true to build rust-lld.
+    set docs = false to save build time.
+
+Linux OS:
+
+    set prefix, sysconfdir = in Linux OS.
+
+Windows OS:
+
+    set python = "python" in Windows OS.
+    set buid, host, target = x86_64-pc-windows-msvc in Windows OS.
+    set allow-old-toolchain = true , if visual studio < vs2019
+
+3. follow readme.md to build the source.
+
+./x.py build
+
+4. Install rust and cargo.
+
+a) For Linux OS:
+
+Use below commend to install.
+
+./x.py install
+./x.py install cargo
+
+    rustc is at /bin.
+    rust-lld is at /lib/rustlib/x86_64-unknown-linux-gnu/bin.
+
+export RUST_PREFIX=<rust install dir>
+export PATH=$RUST_PREFIX/bin:$RUST_PREFIX/lib/rustlib/x86_64-unknown-linux-gnu/bin:$PATH
+export RUST_SRC=<rust> # modify to the rust git.
+export XARGO_RUST_SRC=$RUST_SRC/src
+
+b) For Windows OS:
+
+Set CARGO_HOME environment (default to ~/.cargo. windows example: c:\users<user>.cargo)
+
+Add binary location to PATH (Assume RUST_SRC= @REM modify to the rust git.)
+
+    rustc.exe toolchain is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
+    cargo.exe and tools is at %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin
+
+set RUST_SRC=<rust> @REM modify to the rust git.
+set CARGO_HOME=c:\work\.cargo
+set PATH=%CARGO_HOME%\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin;%RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin;%PATH%
+set XARGO_RUST_SRC=%RUST_SRC%\src
+
+Other way: Copy cargo.exe from %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2-tools-bin to %RUST_SRC%\build\x86_64-pc-windows-msvc\stage2\bin
+
+set RUST_SRC=<rust> @REM modify to the rust git.
+rustup toolchain link rust-uefi %RUST_SRC%x\build\x86_64-pc-windows-msvc\stage2
+rustup default rust-uefi
+set XARGO_RUST_SRC=%RUST_SRC%\src
+
+### Appendix B: Build LLVM from source
+
+1. download the source.
+
+Follow http://clang.llvm.org/get_started.html
+
+2. configure
+
+Linux OS:
+
+cmake -DLLVM_ENABLE_PROJECTS="clang;lld" -G "Unix Makefiles" ../llvm
+
+Windows OS: (assume using VS2017)
+
+cmake -DLLVM_ENABLE_PROJECTS="clang;lld" -G "Visual Studio 15 2017" -A x64 -Thost=x64 ..\llvm
+
+NOTE:
+
+    use LLVM_ENABLE_PROJECTS=clang to build clang.
+    use LLVM_ENABLE_PROJECTS=lld to build lld-link. (https://lld.llvm.org/)
+    use CMAKE_BUILD_TYPE=Release to build release version. (https://llvm.org/docs/CMake.html)
+
+3. build the source
+
+Linux OS:
+
+make
+
+Windows OS: (please use release build, the debug build is very slow.)
+
+devenv LLVM.sln /Build Release /Project ALL_BUILD
+
+4. install
+
+a) For Linux OS:
+
+Add binary location to PATH (Assume LLVM_SRC= # modify to the llvm-project git.)
+
+    clang and lld-link are at $LLVM_SRC/build/bin.
+
+export LLVM_SRC=<llvm-project> # modify to the llvm-project git.
+export PATH=$LLVM_SRC/build/bin;$PATH
+
+b) For Windows OS:
+
+Add binary location to PATH (Assume LLVM_SRC= @REM modify to the llvm-project git.)
+
+    clang and lld-link are at %LLVM_SRC%\build\Release\bin.
+
+set LLVM_SRC=<llvm-project> @REM modify to the llvm-project git.
+set PATH=%LLVM_SRC%\build\Release\bin;%PATH%
