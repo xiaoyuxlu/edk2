@@ -22,7 +22,7 @@
 
 extern crate uefi_rust_panic_lib;
 
-use core::alloc::{GlobalAlloc, Layout, Alloc};
+use core::alloc::{GlobalAlloc, Layout};
 use r_efi::efi;
 use r_efi::efi::{Status};
 use core::ffi::c_void;
