@@ -35,8 +35,8 @@ READ_LOCK_STATUS   = TRUE
 FvNameGuid         = 6D99E806-3D38-42c2-A095-5F4300BFD7DC
 
 INF RustPkg/Test/TestBmpApp/TestBmpApp.inf
-INF RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
-INF RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
+#INF RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
+#INF RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
 
 [Rule.Common.UEFI_APPLICATION]
   FILE APPLICATION = $(NAMED_GUID) {

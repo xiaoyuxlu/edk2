@@ -76,8 +76,8 @@
   BmpSupportLib|RustPkg/MdeModulePkg/Library/BaseBmpSupportLibRust/Cargo.toml
   FmpAuthenticationLib|SecurityPkg/Library/FmpAuthenticationLibPkcs7/FmpAuthenticationLibPkcs7.inf
 
-  #IntrinsicLib|RustPkg/Library/IntrinsicLib/IntrinsicLib.inf
-  IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  IntrinsicLib|RustPkg/Library/IntrinsicLib/IntrinsicLib.inf
+  #IntrinsicLib|CryptoPkg/Library/IntrinsicLib/IntrinsicLib.inf
   OpensslLib|CryptoPkg/Library/OpensslLib/OpensslLib.inf
 
   SafeIntLib|MdePkg/Library/BaseSafeIntLib/BaseSafeIntLib.inf
@@ -195,16 +195,18 @@
     FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
   }
 
-  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
+  #RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
 
-  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
+  #RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
 
   RustPkg/Test/HelloWorld/HelloWorld.inf
   RustPkg/Test/HelloWorld2/HelloWorld2.inf
 
-[RustComponents]
-  RustPkg/Test/HelloWorld/Cargo.toml
-  RustPkg/Test/TestRustLangApp/Cargo.toml
+  RustPkg/External/FatDxeLibRust/Fat.inf
+
+#[RustComponents]
+#  RustPkg/Test/HelloWorld/Cargo.toml
+#  RustPkg/Test/TestRustLangApp/Cargo.toml
 
 [BuildOptions]
   MSFT:DEBUG_*_*_CC_FLAGS = /Od /Oy-
