@@ -15,7 +15,6 @@
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
 #![feature(alloc_error_handler)]
-#![feature(core_panic_info)]
 #![feature(asm)]
 
 #![cfg_attr(not(test), no_std)]
