@@ -15,7 +15,6 @@
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
 #![feature(alloc_error_handler)]
-#![feature(core_panic_info)]
 #![feature(asm)]
 #![feature(global_asm)]
 #![feature(naked_functions)]
