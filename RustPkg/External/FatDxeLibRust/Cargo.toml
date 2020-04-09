@@ -6,10 +6,8 @@ edition = "2018"
 
 [lib]
 name = "fat_rust"
-crate-type = ["staticlib"]
+crate-type = ["staticlib", "rlib"]
 
 [dependencies]
 r-efi = { path = "../../External/r-efi" }
-uefi_rust_panic_lib = { path = "../../Library/UefiRustPanicLib" }
-uefi_rust_allocation_lib = { path = "../../Library/UefiRustAllocationLib" }
 debug_lib = { path = "../../MdePkg/Library/DebugLibRust" }
