@@ -559,6 +559,11 @@ impl Status {
     pub fn is_warning(&self) -> bool {
         self.value() != 0 && self.mask() == Status::WARNING_MASK
     }
+
+    /// Check whether this is success
+    pub fn is_ok(&self) -> bool {
+        self.value() == Status::SUCCESS.value()
+    }
 }
 
 impl From<Status> for Result<Status, Status> {
