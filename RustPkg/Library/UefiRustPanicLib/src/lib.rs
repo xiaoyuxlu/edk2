@@ -14,12 +14,15 @@
 
 
 #![cfg_attr(not(test), no_std)]
-
+#![feature(lang_items)]
 #![allow(unused)]
 
+#[cfg(not(test))]
 #[panic_handler]
 fn panic(_info: &core::panic::PanicInfo) -> ! {
   loop {}
 }
 
-
+#[cfg(not(test))]
+#[lang = "eh_personality"]
+fn eh_personality() {}
