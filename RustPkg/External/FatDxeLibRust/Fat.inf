@@ -43,11 +43,11 @@
   BaseMemoryLib
   DebugLib
   UefiDriverEntryPoint
+  UefiLib
 
 #  UefiRuntimeServicesTableLib
 #  UefiBootServicesTableLib
 #  BaseLib
-#  UefiLib
 #  PcdLib
 #
 #[Guids]

@@ -11,3 +11,4 @@ crate-type = ["staticlib", "rlib"]
 [dependencies]
 r-efi = { path = "../../External/r-efi" }
 debug_lib = { path = "../../MdePkg/Library/DebugLibRust" }
+uefi_rust_allocation_lib = { path = "../../Library/UefiRustAllocationLib" }
