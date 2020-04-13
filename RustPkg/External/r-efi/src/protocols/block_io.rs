@@ -9,7 +9,7 @@ pub const PROTOCOL_GUID: crate::base::Guid = crate::base::Guid::from_fields(
 
 #[repr(C)]
 pub struct BlockIoMedia {
-    media_id: u32,
+    pub media_id: u32,
     removable_media: bool,
     media_present: bool,
     logical_partition: bool,
@@ -17,7 +17,7 @@ pub struct BlockIoMedia {
     write_caching: bool,
     block_size: u32,
     io_align: u32,
-    last_block: u64,
+    pub last_block: u64,
 }
 
 #[repr(C)]
