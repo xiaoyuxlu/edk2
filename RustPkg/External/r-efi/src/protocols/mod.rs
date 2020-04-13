@@ -19,3 +19,5 @@ pub mod driver_binding;
 pub mod disk_io;
 pub mod disk_io2;
 pub mod block_io;
+pub mod component_name;
+pub mod component_name2;
