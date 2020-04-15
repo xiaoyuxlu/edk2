@@ -440,7 +440,7 @@ impl<'a> Filesystem<'a> {
     }
 
     pub fn init(&mut self) -> Result<(), Error> {
-        // crate::log!("EFI_STUB: filesystem init start\n");
+        crate::print!("EFI_STUB: filesystem init start\n");
         const FAT12_MAX: u32 = 0xff5;
         const FAT16_MAX: u32 = 0xfff5;
 
@@ -448,20 +448,13 @@ impl<'a> Filesystem<'a> {
         let disk_io = unsafe{&*(self.disk)};
         let status = (disk_io.read_disk)(self.disk, unsafe{(*(self.device.media)).media_id}, 0, data.len(), &mut data as *mut [u8] as *mut core::ffi::c_void);
         if status.is_error() {
+            crate::print!("EFI_STUB: filesystem init block error\n");
             return Err(Error::BlockError);
         }
 
 
         let h = unsafe { &*(data.as_ptr() as *const Header) };
 
-        // if (FatBs.FatBsb.ReservedSectors == 0 || FatBs.FatBsb.NumFats == 0 || Sectors == 0) {
-        //     return EFI_UNSUPPORTED;
-        //   }
-
-        //   if ((FatBs.FatBsb.SectorSize & (FatBs.FatBsb.SectorSize - 1)) != 0) {
-        //     return EFI_UNSUPPORTED;
-        //   }
-        // if
         self.bytes_per_sector = u32::from(h.bytes_per_sector);
         self.fat_count = u32::from(h.fat_count);
         self.sectors_per_cluster = u32::from(h.sectors_per_cluster);
@@ -481,7 +474,7 @@ impl<'a> Filesystem<'a> {
         } else {
             FatType::FAT32
         };
-        // crate::log!("EFI_STUB: filesystem fat type: {:?}\n", self.fat_type);
+        crate::print!("EFI_STUB: filesystem fat type: {:?}\n", self.fat_type);
 
         if self.fat_type == FatType::FAT32 {
             let h32 = unsafe { &*(data.as_ptr() as *const Fat32Header) };
@@ -503,15 +496,26 @@ impl<'a> Filesystem<'a> {
         self.data_sector_count = self.sectors - self.first_data_sector;
         self.data_cluster_count = self.data_sector_count / self.bytes_per_sector;
 
+        // if (FatBs.FatBsb.ReservedSectors == 0 || FatBs.FatBsb.NumFats == 0 || Sectors == 0) {
+        //     return EFI_UNSUPPORTED;
+        //   }
+
+        //   if ((FatBs.FatBsb.SectorSize & (FatBs.FatBsb.SectorSize - 1)) != 0) {
+        //     return EFI_UNSUPPORTED;
+        //   }
+        // if
         if h.reserved_sectors == 0 || h.fat_count == 0 || self.sectors == 0 {
+            crate::print!("EFI_STUB: filesystem not support\n");
             return Err(Error::Unsupported);
         }
 
         if self.sectors_per_fat == 0 {
+            crate::print!("EFI_STUB: filesystem not support 2\n");
             return Err(Error::Unsupported);
         }
 
         self.start = u64::from(h.reserved_sectors);
+        crate::print!("EFI_STUB: filesystem init success\n");
         Ok(())
     }
 
@@ -599,6 +603,7 @@ impl<'a> Filesystem<'a> {
     }
 
     pub fn root(&self) -> Result<Directory, Error> {
+        crate::println!("fat type: {:?}", self.fat_type);
         match self.fat_type {
             FatType::FAT12 | FatType::FAT16 => {
                 let root_directory_start = self.first_data_sector - self.root_dir_sectors;
@@ -616,7 +621,7 @@ impl<'a> Filesystem<'a> {
                 offset: 0,
             }),
             _ => {
-                // crate::log!("root unsupported error!\n");
+                crate::println!("root unsupported error!\n");
                 Err(Error::Unsupported)
             },
         }

@@ -24,8 +24,6 @@ use crate::fat::Error as FatError;
 use crate::fat::DirectoryEntry;
 use crate::fat::FileType;
 
-use alloc::boxed::Box;
-
 #[cfg(not(test))]
 #[derive(Copy, Clone, PartialEq)]
 enum HandleType {
@@ -55,18 +53,19 @@ pub extern "win64" fn filesystem_open_volume(
     fs_proto: *mut SimpleFileSystemProtocol,
     file: *mut *mut FileProtocol,
 ) -> Status {
-    // log!("EFI-STUB: open_volume start\n");
+    crate::print!("EFI-STUB: open_volume start {:p} {:p}\n", fs_proto, file);
     let wrapper = container_of!(fs_proto, FileSystemWrapper, proto);
     let wrapper = unsafe { &*wrapper };
 
+    crate::print!("EFI-STUB: before create root file\n");
     if let Some(fw) = wrapper.create_root_file() {
         unsafe {
             *file = &mut (*fw).proto;
         }
-        // log!("EFI-STUB: open_volume\n");
+        crate::print!("EFI-STUB: open_volume\n");
         Status::SUCCESS
     } else {
-        // log!("EFI-STUB: open_volume failed\n");
+        crate::print!("EFI-STUB: open_volume failed\n");
         Status::DEVICE_ERROR
     }
 }
@@ -91,10 +90,10 @@ pub extern "win64" fn open(
     crate::common::ucs2_to_ascii(path_in, &mut path);
     let path = unsafe { core::str::from_utf8_unchecked(&path) };
     let path = &path[0..length] as &str;
-    // log!("EFI_STUB - enter open - file_in address: {:x} - path: {}\n", file_in as *mut FileProtocol as u64, path);
+    crate::print!("EFI_STUB - enter open - file_in address: {:x} - path: {}\n", file_in as *mut FileProtocol as u64, path);
 
     if path == "\\" {
-        // log!("EFI-STUB: path = \\\n");
+        crate::print!("EFI-STUB: path = \\\n");
         let fs_wrapper = unsafe { &(*wrapper.fs_wrapper) };
         let file_out_wrapper = fs_wrapper.create_root_file().unwrap();
         unsafe {
@@ -108,7 +107,7 @@ pub extern "win64" fn open(
         return Status::SUCCESS;
     }
     if path == ".." {
-        // log!("EFI-STUB: path = ..\n");
+        crate::print!("EFI-STUB: path = ..\n");
         if wrapper.root {
             return Status::NOT_FOUND;
         }
@@ -122,7 +121,7 @@ pub extern "win64" fn open(
 
     match wrapper.fs.open(path) {
         Ok(f) => {
-            // log!("EFI-STUB: file protocol open function ok\n");
+            crate::print!("EFI-STUB: file protocol open function ok\n");
             let fs_wrapper = unsafe { &(*wrapper.fs_wrapper) };
             if let Some(file_out_wrapper) = fs_wrapper.create_file(false) {
                 let _filename = unsafe{core::str::from_utf8_unchecked(&f.name)};
@@ -157,19 +156,19 @@ pub extern "win64" fn open(
                 unsafe {
                     *file_out = &mut (*file_out_wrapper).proto;
                 }
-                // log!("EFI-STUB: file.rs open successful\n");
+                crate::print!("EFI-STUB: file.rs open successful\n");
                 Status::SUCCESS
             } else {
-                // log!("EFI-STUB: file.rs open failed device_error\n");
+                crate::print!("EFI-STUB: file.rs open failed device_error\n");
                 Status::DEVICE_ERROR
             }
         },
         Err(FatError::NotFound) => {
-            // log!("EFI-STUB: open failed not found {:?}\n", path);
+            crate::print!("EFI-STUB: open failed not found {:?}\n", path);
             Status::NOT_FOUND
         },
         Err(_) => {
-            // log!("EFI-STUB: file.rs open failed device_error\n");
+            crate::print!("EFI-STUB: file.rs open failed device_error\n");
             Status::DEVICE_ERROR
         },
     }
@@ -183,7 +182,7 @@ pub extern "win64" fn close(proto: *mut FileProtocol) -> Status {
 
 #[cfg(not(test))]
 pub extern "win64" fn delete(_: *mut FileProtocol) -> Status {
-    // crate::log!("delete unsupported");
+    crate::print!("delete unsupported");
     Status::UNSUPPORTED
 }
 
@@ -278,14 +277,15 @@ pub extern "win64" fn read(file: *mut FileProtocol, size: *mut usize, buf: *mut 
 
 #[cfg(not(test))]
 pub extern "win64" fn write(_: *mut FileProtocol, _: *mut usize, _: *mut c_void) -> Status {
-    // crate::log!("write unsupported");
-    Status::UNSUPPORTED
+    crate::print!("write unsupported");
+    Status::SUCCESS
+    //Status::UNSUPPORTED
 }
 
 #[cfg(not(test))]
 pub extern "win64" fn get_position(_: *mut FileProtocol, _: *mut u64) -> Status {
-    // crate::log!("get_position unsupported");
-    Status::UNSUPPORTED
+    crate::print!("get_position unsupported");
+    Status::SUCCESS
 }
 
 #[cfg(not(test))]
@@ -410,7 +410,7 @@ impl<'a> FileSystemWrapper<'a> {
             long_name: [0; 255],
         };
 
-        let mut file_wrapper = Box::new( FileWrapper {
+        let tmpfile_wrapper = FileWrapper {
             fs: self.fs,
             fs_wrapper: self,
             root: false,
@@ -443,9 +443,16 @@ impl<'a> FileSystemWrapper<'a> {
                 position: 0,
             },
             parent: 0,
-        });
+        };
+        let file_wrapper: &mut FileWrapper;
+        unsafe {
+            let size = core::mem::size_of::<FileWrapper>();
+            let address = crate::AllocatePool(size) as *mut FileWrapper;
+            *address = tmpfile_wrapper;
+            file_wrapper = &mut (*address);
+        }
 
-        Some(file_wrapper.as_mut())
+        Some(file_wrapper)
     }
 
     fn create_root_file(&self) -> Option<*mut FileWrapper> {
@@ -465,7 +472,7 @@ impl<'a> FileSystemWrapper<'a> {
             long_name: [0; 255],
         };
 
-        let mut file_wrapper = Box::new( FileWrapper {
+        let tmpfile_wrapper = FileWrapper {
             fs: self.fs,
             fs_wrapper: self,
             root: true,
@@ -498,9 +505,15 @@ impl<'a> FileSystemWrapper<'a> {
                 position: 0,
             },
             parent: 0,
-        });
-
-        Some(file_wrapper.as_mut())
+        };
+        let file_wrapper: &mut FileWrapper;
+        unsafe {
+            let size = core::mem::size_of::<FileWrapper>();
+            let address = crate::AllocatePool(size) as *mut FileWrapper;
+            *address = tmpfile_wrapper;
+            file_wrapper = &mut (*address);
+        }
+        Some(file_wrapper)
     }
 
     pub fn new(

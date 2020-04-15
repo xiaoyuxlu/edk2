@@ -1,7 +1,6 @@
 #![cfg_attr(not(test), no_std)]
 
 extern crate alloc;
-use alloc::boxed::Box;
 
 #[cfg(not(test))]
 extern crate debug_lib;
@@ -32,25 +31,39 @@ extern "C" {
         component_name2: *const efi::protocols::component_name2::Protocol
     ) -> efi::Status;
 
+    fn AllocatePool (Size: usize) -> *mut core::ffi::c_void;
+    //fn FreePool (Buffer: *mut core::ffi::c_void);
 }
+
+// static fat_driver_binding: efi::protocols::driver_binding::Protocol = efi::protocols::driver_binding::Protocol {
+//     supported: fat_driver_binding_supported,
+//     start: fat_driver_binding_start,
+//     stop: fat_driver_binding_stop,
+//     version: 0xau32,
+//     image_handle: core::ptr::null_mut() as efi::Handle,
+//     driver_binding_handle: core::ptr::null_mut() as efi::Handle
+// };
 
 #[export_name = "FatEntryPoint"]
 pub extern "win64" fn fat_entry_point(h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status
 {
-    let fat_driver_binding = Box::new(efi::protocols::driver_binding::Protocol {
-        supported: fat_driver_binding_supported,
-        start: fat_driver_binding_start,
-        stop: fat_driver_binding_stop,
-        version: 0xau32,
-        image_handle: core::ptr::null_mut() as efi::Handle,
-        driver_binding_handle: core::ptr::null_mut() as efi::Handle
-    });
+    let size = core::mem::size_of::<efi::protocols::driver_binding::Protocol>();
+
     print!("fat_entry_point\n");
     let _status = unsafe {
+        let address = AllocatePool(size);
+        let fat_driver_binding = address as *mut efi::protocols::driver_binding::Protocol;
+        (*fat_driver_binding).supported = fat_driver_binding_supported;
+        (*fat_driver_binding).start = fat_driver_binding_start;
+        (*fat_driver_binding).stop = fat_driver_binding_stop;
+        (*fat_driver_binding).version = 0xAu32;
+        (*fat_driver_binding).image_handle = core::ptr::null_mut() as efi::Handle;
+        (*fat_driver_binding).driver_binding_handle = core::ptr::null_mut() as efi::Handle;
+
         EfiLibInstallDriverBindingComponentName2(
             h,
             st,
-            fat_driver_binding.as_ref() as *const efi::protocols::driver_binding::Protocol,
+            fat_driver_binding as *const efi::protocols::driver_binding::Protocol,
             h,
             core::ptr::null_mut() as *const efi::protocols::component_name::Protocol,
             core::ptr::null_mut() as *const efi::protocols::component_name2::Protocol);
@@ -89,8 +102,9 @@ pub extern "win64" fn fat_driver_binding_supported(this: *mut efi::protocols::dr
         &mut core::ptr::null_mut() as *mut *mut efi::protocols::disk_io::Protocol as *mut *mut core::ffi::c_void,
         this.driver_binding_handle,
         controller_handle,
-        efi::OPEN_PROTOCOL_TEST_PROTOCOL);
-
+        efi::OPEN_PROTOCOL_TEST_PROTOCOL
+    );
+    println!("fat_driver_binding supported {:?}", status);
     status
 }
 
@@ -147,19 +161,40 @@ pub extern "win64" fn fat_driver_binding_start(
     // TODO simple file system initialize
     // 1.  is fat?
     // 2.  install simple file system protocol
-    let mut fs = Box::new(fat::Filesystem::new(unsafe{&mut *block_io}, unsafe{&mut *disk_io}));
+
+    print!("fat_entry_point\n");
+
+    let tmpfs = fat::Filesystem::new(unsafe{&mut *block_io}, unsafe{&mut *disk_io});
+
+    let fs: &mut fat::Filesystem;
+    unsafe {
+        let size = core::mem::size_of::<fat::Filesystem>();
+        let address = AllocatePool(size) as *mut fat::Filesystem;
+        *address = tmpfs;
+        fs = &mut (*address);
+    }
     let res = fs.init();
     if res.is_err() {
         println!("filesystem not support");
         return efi::Status::UNSUPPORTED;
     }
-    let mut fs_wrapper = Box::new(crate::fat::file::FileSystemWrapper::new(&fs, Some(0)));
+    println!("filesystem create file system wrapper");
+    let tmpfs_wrapper = crate::fat::file::FileSystemWrapper::new(&fs, Some(0));
+    let fs_wrapper: &mut fat::file::FileSystemWrapper;
+    unsafe {
+        let size = core::mem::size_of::<fat::file::FileSystemWrapper>();
+        let address = AllocatePool(size) as *mut fat::file::FileSystemWrapper;
+        *address = tmpfs_wrapper;
+        fs_wrapper = &mut (*address);
+    }
+
     let status = (bs.install_protocol_interface)(
         &controller_handle as *const efi::Handle as *mut efi::Handle,
         &mut r_efi::protocols::simple_file_system::PROTOCOL_GUID as *mut efi::Guid,
         efi::InterfaceType::NativeInterface,
         &mut fs_wrapper.proto as *mut r_efi::protocols::simple_file_system::Protocol as *mut core::ffi::c_void
     );
+    println!("filesystem install protocol result: {:?}", status.value());
 
     status
 }
