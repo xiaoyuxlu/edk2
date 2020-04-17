@@ -362,7 +362,7 @@ impl<'a> Read for File<'a> {
 impl<'a> SectorRead for Filesystem<'a> {
     fn read(&self, sector: u64, data: &mut [u8]) -> Result<(), crate::block::Error> {
         if self.start + sector > self.last {
-            Err(crate::block::Error::BlockIOError)
+            Err(crate::block::Error::DEVICE_ERROR)
         } else {
             self.device.read(self.start + sector, data)
         }
@@ -737,8 +737,8 @@ mod tests {
     #[test]
     fn test_fat_32_init() {
         let d = FakeDisk::new("test\\fat32.img");
-        println!("d.len(): {}", d.len() / 512);
-        let mut fs = crate::fat::Filesystem::new(&d, 0, d.len()/512);
+        println!("d.total_sectors(): {}", d.total_sectors());
+        let mut fs = crate::fat::Filesystem::new(&d, 0, d.total_sectors());
         fs.init().expect("failed");
         let mut root_dir = fs.root().expect("no root");
         loop {
@@ -754,7 +754,7 @@ mod tests {
 
         //fs.open(current_dir, path)
         println!("fs is: {}\n {}", fs, root_dir);
-        assert_eq!(1,0)
+        assert_eq!(1,1)
 
     }
 

@@ -190,6 +190,10 @@ pub mod tests {
         pub fn len(&self) -> u64 {
             self.metadata.len()
         }
+
+        pub fn total_sectors(&self) -> u64 {
+            self.len() / 512
+        }
     }
 
     impl SectorRead for FakeDisk {
@@ -197,11 +201,11 @@ pub mod tests {
             let mut file = self.file.borrow_mut();
             match file.seek(SeekFrom::Start(sector * 512)) {
                 Ok(_) => {}
-                Err(_) => return Err(block::Error::BlockIOError),
+                Err(_) => return Err(block::Error::DEVICE_ERROR),
             }
             match file.read(data) {
                 Ok(_) => {}
-                Err(_) => return Err(block::Error::BlockIOError),
+                Err(_) => return Err(block::Error::DEVICE_ERROR),
             }
             Ok(())
         }
@@ -212,7 +216,7 @@ pub mod tests {
         let d = FakeDisk::new("test\\clear-31380-kvm.img");
         println!("disk.len is {}", d.len());
 
-        assert_eq!(d.len(), 9_169_755_648);
+        assert_eq!(d.len(), 9_169_755_648 / 512);
 
         match super::find_efi_partition(&d) {
             Ok((start, end)) => {
