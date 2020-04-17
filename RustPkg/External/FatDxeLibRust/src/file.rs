@@ -1,5 +1,8 @@
 #![allow(unused)]
 
+extern crate efi_str;
+use efi_str::{OsStr, OsString};
+
 use r_efi::efi::{self, Status, Char16, Guid};
 use r_efi::protocols::simple_file_system::Protocol as SimpleFileSystemProtocol;
 use r_efi::protocols::file::Protocol as FileProtocol;
@@ -107,9 +110,19 @@ impl<'a> FileSystemWrapper<'a> {
 pub extern "win64" fn filesystem_open_volumn(
     proto: *mut SimpleFileSystemProtocol,
     file: *mut *mut FileProtocol,
-) -> Status {
-    Status::UNSUPPORTED
-}
+) -> Status { unsafe {
+    let wrapper = container_of!(proto, FileSystemWrapper, proto);
+    let wrapper: &FileSystemWrapper = &*wrapper;
+
+    let res = wrapper.create_file(true);
+    match res {
+        Err(err) => {return err;}
+        Ok(fw) => {
+            *file = &mut (*fw).proto;
+            return Status::SUCCESS;
+        }
+    }
+}}
 
 pub extern "win64" fn open(
     file_in: *mut FileProtocol,
@@ -117,9 +130,13 @@ pub extern "win64" fn open(
     path_in: *mut Char16,
     _: u64,
     _: u64,
-) -> Status {
+) -> Status { unsafe {
+    let wrapper = container_of!(file_in, FileWrapper, proto);
+    let wrapper: &FileWrapper = unsafe { &*wrapper };
+
+
     Status::UNSUPPORTED
-}
+}}
 
 pub extern "win64" fn close(proto: *mut FileProtocol) -> Status {
     Status::UNSUPPORTED
