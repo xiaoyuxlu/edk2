@@ -23,13 +23,23 @@ pub trait SectorWrite {
 
 pub struct BlockIoDevice {
     inner: Option<*mut EfiBlockIoProtocol>,
+
+    // set by new function
+    pub media_id:  u32,
+    pub block_size: u32,
+    pub logical_partition: bool,
 }
 
 impl BlockIoDevice {
-    pub unsafe fn new(block_io: *mut EfiBlockIoProtocol) -> Result<*mut BlockIoDevice, Error> {
-        let res = crate::alloc::malloc::<BlockIoDevice>()?;
-        (*res).inner = Some(block_io);
-        Ok(res)
+    pub fn new(block_io: *mut EfiBlockIoProtocol) -> BlockIoDevice {
+        unsafe{
+            BlockIoDevice {
+                inner: Some(block_io),
+                media_id:(*(*block_io).media).media_id,
+                block_size: (*(*block_io).media).block_size,
+                logical_partition: (*(*block_io).media).logical_partition,
+            }
+        }
     }
 }
 
