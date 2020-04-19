@@ -138,7 +138,7 @@ pub struct File<'a> {
 
 pub struct Directory<'a> {
     filesystem: &'a Filesystem<'a>,
-    cluster: Option<u32>,
+    pub cluster: Option<u32>,
     sector: u32,
     offset: usize,
     cluster_start: Option<u32>,

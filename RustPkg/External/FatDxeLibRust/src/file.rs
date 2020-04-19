@@ -1,7 +1,7 @@
 #![allow(unused)]
+extern crate alloc;
 
-extern crate efi_str;
-use efi_str::{OsStr, OsString};
+use efi_str::OsStr;
 
 use r_efi::efi::{self, Status, Char16, Guid};
 use r_efi::protocols::simple_file_system::Protocol as SimpleFileSystemProtocol;
@@ -10,9 +10,23 @@ use r_efi::protocols::file::IoToken;
 use r_efi::protocols::device_path::Protocol as DevicePathProtocol;
 use r_efi::protocols::device_path::{HardDriveDevicePath, HardDriveDevicePathNode};
 use crate::fat::Filesystem;
-use crate::alloc::{malloc, free};
+use crate::calloc::{malloc, free};
 
 use core::ffi::c_void;
+
+#[cfg(not(test))]
+#[repr(packed)]
+struct FileInfo {
+    size: u64,
+    file_size: u64,
+    physical_size: u64,
+    _create_time: r_efi::system::Time,
+    _last_access_time: r_efi::system::Time,
+    _modification_time: r_efi::system::Time,
+    attribute: u64,
+    file_name: [Char16; 256],
+}
+
 
 pub struct FileSystemWrapper<'a> {
     pub fs: Filesystem<'a>,
@@ -21,9 +35,12 @@ pub struct FileSystemWrapper<'a> {
 
 pub struct FileWrapper<'a> {
     pub fs: &'a Filesystem<'a>,
+    pub fs_wrapper: *const FileSystemWrapper<'a>,
     pub proto: FileProtocol,
     pub root: bool,
-    pub parent: Option<&'a FileWrapper<'a>>
+    pub parent: Option<&'a FileWrapper<'a>>,
+
+    pub dir_entry: crate::fat::DirectoryEntry,
 }
 
 impl<'a> FileSystemWrapper<'a> {
@@ -42,6 +59,8 @@ impl<'a> FileSystemWrapper<'a> {
         let fw = malloc::<FileWrapper>()?;
 
         (*fw).fs = &(self.fs);
+
+        (*fw).fs_wrapper = self;
 
         (*fw).proto = FileProtocol {
             revision: r_efi::protocols::file::REVISION,
@@ -76,6 +95,18 @@ impl<'a> FileSystemWrapper<'a> {
 
         (*fw).parent = None;
 
+        if root {
+            let root_dir = self.fs.root().unwrap();
+            let mut entry = crate::fat::DirectoryEntry {
+                name: [0; 11],
+                file_type: crate::fat::FileType::Directory,
+                cluster: root_dir.cluster.unwrap(),
+                size: 0,
+                long_name: [0; 255],
+            };
+            (*fw).dir_entry = entry;
+        }
+
         Ok(fw)
     }
 
@@ -102,15 +133,14 @@ impl<'a> FileSystemWrapper<'a> {
                 },
             },
         };
-        let mut fp = crate::alloc::duplicate(&file_system_path)?;
+        let mut fp = crate::calloc::duplicate(&file_system_path)?;
         Ok(fp as *mut c_void)
     }
 }
 
 pub extern "win64" fn filesystem_open_volumn(
     proto: *mut SimpleFileSystemProtocol,
-    file: *mut *mut FileProtocol,
-) -> Status { unsafe {
+    file: *mut *mut FileProtocol) -> Status { unsafe {
     let wrapper = container_of!(proto, FileSystemWrapper, proto);
     let wrapper: &FileSystemWrapper = &*wrapper;
 
@@ -134,11 +164,79 @@ pub extern "win64" fn open(
     let wrapper = container_of!(file_in, FileWrapper, proto);
     let wrapper: &FileWrapper = unsafe { &*wrapper };
 
+    let mut path = OsStr::from_char16_with_nul_mut(path_in);
+    let path = alloc::string::String::from_utf16_lossy(path.as_u16_slice());
+    log!("path is: {:?}", path);
 
-    Status::UNSUPPORTED
+    if path == "\\" {
+        log!("root path \\ enter");
+        let fs_wrapper = unsafe { &(*wrapper.fs_wrapper) };
+        let file_out_wrapper = fs_wrapper.create_file(true);
+        if file_out_wrapper.is_err() {
+            return file_out_wrapper.err().unwrap();
+        }
+        let file_out_wrapper = file_out_wrapper.expect("unwrap error");
+        unsafe {
+            *file_out = &mut (*file_out_wrapper).proto;
+            return Status::SUCCESS;
+        }
+    }
+
+    if path == "." {
+        log!("path = . enter");
+        unsafe{*file_out = file_in;}
+        return Status::SUCCESS;
+    }
+    if path == ".." {
+        log!("path = .. enter");
+        if wrapper.root {
+            log!(".. root is true");
+            return Status::NOT_FOUND;
+        }
+
+        if wrapper.parent.is_none() {
+            log!("parent is None");
+            return Status::NOT_FOUND;
+        }
+        let wrapper_parent = wrapper.parent.expect("unwrap error");
+        unsafe{
+            *file_out = &(wrapper_parent.proto) as *const FileProtocol as *mut FileProtocol;
+        }
+        return Status::SUCCESS;
+    }
+
+    match wrapper.fs.open(&path[..]) {
+        Ok(f) => {
+            let fs_wrapper = unsafe { &(*wrapper.fs_wrapper) };
+            let ret = fs_wrapper.create_file(false);
+            if ret.is_err() {
+                return Status::DEVICE_ERROR;
+            }
+
+            let file_out_wrapper = ret.unwrap();
+            unsafe {
+                (*file_out_wrapper).dir_entry = f;
+                (*file_out_wrapper).parent = Some(wrapper);
+
+                *file_out = &mut (*file_out_wrapper).proto;
+            }
+            log!("file open successful\n");
+            return Status::SUCCESS;
+        }
+        Err(crate::fat::Error::NotFound) => {
+            log!("file open not found\n");
+            return Status::NOT_FOUND;
+        }
+        Err(_) => {
+            log!("file open device error\n");
+            return Status::DEVICE_ERROR;
+        }
+    }
 }}
 
 pub extern "win64" fn close(proto: *mut FileProtocol) -> Status {
+    let wrapper = container_of!(proto, FileWrapper, proto);
+    unsafe{crate::calloc::free(wrapper as *mut FileWrapper);}
     Status::UNSUPPORTED
 }
 
@@ -147,8 +245,110 @@ pub extern "win64" fn delete(_: *mut FileProtocol) -> Status {
     Status::UNSUPPORTED
 }
 
+pub fn ascii_to_ucs2(input: &str, output: &mut [u16]) {
+    assert!(output.len() >= input.len() * 2);
+
+    for (i, c) in input.bytes().enumerate() {
+        output[i] = u16::from(c);
+    }
+}
+
 pub extern "win64" fn read(file: *mut FileProtocol, size: *mut usize, buf: *mut c_void) -> Status {
-    Status::UNSUPPORTED
+    let wrapper = container_of_mut!(file, FileWrapper, proto);
+    let wrapper:&FileWrapper = unsafe{&(*wrapper)};
+    match wrapper.dir_entry.file_type {
+        crate::fat::FileType::File => {
+            let mut file = wrapper.fs.get_file(wrapper.dir_entry.cluster, wrapper.dir_entry.size);
+            if file.is_err() {
+                return Status::DEVICE_ERROR;
+            }
+            let mut file = file.expect("unwrap error");
+            let mut current_offset = 0;
+            let mut bytes_remaining = unsafe { *size };
+            loop {
+                use crate::fat::Read;
+                let buf = unsafe { core::slice::from_raw_parts_mut(buf as *mut u8, *size) };
+
+                let mut data: [u8; 512] = [0; 512];
+                unsafe {
+
+                    match file.read(&mut data) {
+                        Ok(bytes_read) => {
+                            buf[current_offset..current_offset + bytes_read as usize]
+                                .copy_from_slice(&data[0..bytes_read as usize]);
+                            current_offset += bytes_read as usize;
+
+                            if bytes_remaining <= bytes_read as usize {
+                                *size = current_offset;
+                                return Status::SUCCESS;
+                            }
+                            bytes_remaining -= bytes_read as usize;
+                        }
+                        Err(_) => {
+                            return Status::DEVICE_ERROR;
+                        }
+                    }
+                }
+            }
+        }
+        crate::fat::FileType::Directory => {
+            let info = buf as *mut FileInfo;
+            unsafe {
+                // let fs = wrapper.fs;
+                // let cluster = wrapper.dir_entry.cluster;
+                let directory = wrapper.fs.get_directory(wrapper.dir_entry.cluster);
+                if directory.is_err(){
+                    return Status::DEVICE_ERROR;
+                }
+                let mut directory = directory.expect("unwrap error");
+                match directory.next_entry() {
+                    Err(crate::fat::Error::EndOfFile) => {
+                        (*info).size = 0;
+                        (*info).attribute = 0;
+                        (*info).file_name[0] = 0;
+                        (*size) = 0;
+                        return Status::SUCCESS;
+                    }
+                    Err(e) => {
+                        log!("EFI-STUB: next_entry device error\n");
+                        return Status::DEVICE_ERROR;
+                    }
+                    Ok(de) => {
+                        let mut long_name = de.long_name;
+                        if long_name[0] == 0 {
+                            for i in 0..11 {
+                                long_name[i] = de.name[i];
+                            }
+                        }
+                        let mut fname = unsafe{core::str::from_utf8_unchecked(&long_name)};
+                        let filename = &fname as &str;
+
+                        ascii_to_ucs2(filename, &mut (*info).file_name);
+                        match de.file_type {
+                            crate::fat::FileType::File => {
+                                (*info).size = core::mem::size_of::<FileInfo>() as u64;
+                                (*info).file_size = de.size.into();
+                                (*info).physical_size = de.size.into();
+                                (*info).attribute = 0x20;
+                            }
+                            crate::fat::FileType::Directory => {
+                                // TODO: calculate the size of directory.
+                                (*info).size = core::mem::size_of::<FileInfo>() as u64;
+                                (*info).file_size = 4096;
+                                (*info).physical_size = 4096;
+                                (*info).attribute = 0x10;
+                            }
+                        }
+                        return Status::SUCCESS;
+                    }
+                }
+            }
+            return Status::SUCCESS;
+
+        }
+    }
+
+
 }
 
 pub extern "win64" fn write(_: *mut FileProtocol, _: *mut usize, _: *mut c_void) -> Status {
@@ -173,7 +373,48 @@ pub extern "win64" fn get_info(
     info_size: *mut usize,
     info: *mut c_void,
 ) -> Status {
-    Status::UNSUPPORTED
+    let wrapper = container_of!(file, FileWrapper, proto);
+    let wrapper = unsafe{&(*wrapper)};
+    if unsafe { *guid } == r_efi::protocols::file::INFO_ID {
+        if unsafe { *info_size } < core::mem::size_of::<FileInfo>() {
+            unsafe { *info_size = core::mem::size_of::<FileInfo>() };
+            Status::BUFFER_TOO_SMALL
+        } else {
+            let info = info as *mut FileInfo;
+            use crate::fat::Read;
+            let mut long_name = wrapper.dir_entry.long_name;
+            if long_name[0] == 0 {
+                for i in 0..11 {
+                    long_name[i] = (*wrapper).dir_entry.name[i];
+                }
+            }
+            let filename = unsafe{core::str::from_utf8_unchecked(&long_name)};
+            //log!("EFI-STUB: get_info: dir_entry.name: {:?}, dir_entry.long_name: {:?}\n", (*wrapper).dir_entry.name, filename);
+            let filename = &filename[0..255] as &str;
+            match wrapper.dir_entry.file_type {
+                crate::fat::FileType::File => { unsafe{
+                    ascii_to_ucs2(filename, &mut (*info).file_name);
+                    (*info).size = core::mem::size_of::<FileInfo>() as u64;
+                    let file = wrapper.fs.get_file(wrapper.dir_entry.cluster, wrapper.dir_entry.size).expect("error");
+                    (*info).file_size = file.get_size().into();
+                    (*info).physical_size = file.get_size().into();
+                    (*info).attribute = 0x20;
+                }}
+                crate::fat::FileType::Directory => { unsafe {
+                    (*info).size = core::mem::size_of::<FileInfo>() as u64;
+                    (*info).file_size = 4096;
+                    (*info).physical_size = 4096;
+                    (*info).attribute = 0x10;
+                }}
+            }
+
+
+            Status::SUCCESS
+        }
+    } else {
+        crate::log!("get_info unsupported");
+        Status::UNSUPPORTED
+    }
 }
 
 pub extern "win64" fn set_info(
