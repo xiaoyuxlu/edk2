@@ -102,7 +102,7 @@ impl<'a> FileSystemWrapper<'a> {
                 size: 0,
                 long_name: [0; 255],
             };
-            (*fw).dir = self.fs.get_directory(entry.cluster).unwrap();
+            (*fw).dir = root_dir;
             (*fw).dir_entry = entry;
         }
 
@@ -148,7 +148,7 @@ pub extern "win64" fn filesystem_open_volumn(
         Err(err) => {return err;}
         Ok(fw) => {
             *file = &mut (*fw).proto;
-            log!("open_volumn - status: {:x} - path: \\, file: {:x}", Status::SUCCESS.value(), *file as u64);
+            //log!("open_volumn - status: {:x} - path: \\, file: {:x}", Status::SUCCESS.value(), *file as u64);
             return Status::SUCCESS;
         }
     }
@@ -187,8 +187,8 @@ pub extern "win64" fn open(
         let file_out_wrapper: *mut FileWrapper = fs_wrapper.create_file(false).unwrap();
 
         unsafe{
-            (*file_out_wrapper).fs = wrapper.fs;
-            (*file_out_wrapper).fs_wrapper = wrapper.fs_wrapper;
+        //     (*file_out_wrapper).fs = wrapper.fs;
+        //     (*file_out_wrapper).fs_wrapper = wrapper.fs_wrapper;
             (*file_out_wrapper).root = wrapper.root;
             (*file_out_wrapper).parent = wrapper.parent;
             (*file_out_wrapper).dir_entry = wrapper.dir_entry;
@@ -207,12 +207,11 @@ pub extern "win64" fn open(
             log!("open - status: {:x} - path: {}, file_in: {:x}, file_out: {:x}", Status::NOT_FOUND.value(), path_os, file_in as u64, *file_out as u64);
             return Status::NOT_FOUND;
         }
-
         let wrapper = wrapper.parent.expect("unwrap");
         let file_out_wrapper: *mut FileWrapper = fs_wrapper.create_file(false).unwrap();
         unsafe{
-            (*file_out_wrapper).fs = wrapper.fs;
-            (*file_out_wrapper).fs_wrapper = wrapper.fs_wrapper;
+            // (*file_out_wrapper).fs = wrapper.fs;
+            // (*file_out_wrapper).fs_wrapper = wrapper.fs_wrapper;
             (*file_out_wrapper).root = wrapper.root;
             (*file_out_wrapper).parent = wrapper.parent;
             (*file_out_wrapper).dir_entry = wrapper.dir_entry;
@@ -276,7 +275,7 @@ pub extern "win64" fn open(
 }}
 
 pub extern "win64" fn close(proto: *mut FileProtocol) -> Status {
-    log!("file close: {:x}", proto as u64);
+    //log!("file close: {:x}", proto as u64);
     let wrapper = container_of!(proto, FileWrapper, proto);
     unsafe{crate::calloc::free(wrapper as *mut FileWrapper);}
     Status::UNSUPPORTED
