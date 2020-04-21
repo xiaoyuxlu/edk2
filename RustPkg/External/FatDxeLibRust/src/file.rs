@@ -239,7 +239,7 @@ pub extern "win64" fn open(
             unsafe {
                 match f.file_type {
                     crate::fat::FileType::Directory => {
-                        let directory = wrapper.fs.get_directory(wrapper.dir_entry.cluster);
+                        let directory = wrapper.fs.get_directory(f.cluster);
                         if directory.is_err(){
                             log!("open - status: {:x}, path: {}, file_in: {:x}, file_out: {:x}", Status::DEVICE_ERROR.value(), path_os, file_in as u64, *file_out as u64);
                             return Status::DEVICE_ERROR;
@@ -249,7 +249,7 @@ pub extern "win64" fn open(
                         (*file_out_wrapper).parent = Some(wrapper);
                     }
                     crate::fat::FileType::File => {
-                        let mut file = wrapper.fs.get_file(wrapper.dir_entry.cluster, wrapper.dir_entry.size);
+                        let mut file = wrapper.fs.get_file(f.cluster, f.size);
                         if file.is_err() {
                             return Status::DEVICE_ERROR;
                         }
