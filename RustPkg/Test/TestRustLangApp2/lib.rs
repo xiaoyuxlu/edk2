@@ -15,7 +15,6 @@
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
 #![feature(alloc_error_handler)]
-#![feature(core_panic_info)]
 #![feature(asm)]
 
 #![cfg_attr(not(test), no_std)]
@@ -203,7 +202,7 @@ fn release_buffer (test_table : &mut TestTableFixed)
 #[no_mangle]
 #[export_name = "TestBufferDrop"]
 pub extern fn test_buffer_drop (
-    
+
     )
 {
     match get_buffer () {
@@ -232,7 +231,7 @@ pub extern fn test_buffer_borrow (
     //test_table2.r#type = 2; // error
 }
 
-use core::alloc::{GlobalAlloc, Layout, Alloc};
+use core::alloc::{GlobalAlloc, Layout, AllocRef};
 
 pub struct MyAllocator;
 
@@ -262,7 +261,7 @@ static ALLOCATOR: MyAllocator = MyAllocator;
 #[no_mangle]
 #[export_name = "TestBufferAlloc"]
 pub extern fn test_buffer_alloc (
-    
+
     )
 {
     let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(32, 4) };

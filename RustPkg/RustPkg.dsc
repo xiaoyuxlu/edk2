@@ -195,9 +195,9 @@
     FmpAuthenticationLib|RustPkg/SecurityPkg/Library/FmpAuthenticationLibPkcs7Rust/FmpAuthenticationLibPkcs7.inf
   }
 
-  #RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
+  RustPkg/Test/TestRustLangApp/TestRustLangApp.inf
 
-  #RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
+  RustPkg/Test/TestRustLangApp2/TestRustLangApp.inf
 
   RustPkg/Test/HelloWorld/HelloWorld.inf
   RustPkg/Test/HelloWorld2/HelloWorld2.inf
