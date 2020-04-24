@@ -14,7 +14,6 @@
 
 #![feature(alloc_layout_extra)]
 #![feature(allocator_api)]
-#![feature(core_panic_info)]
 
 #![cfg_attr(not(test), no_std)]
 
@@ -25,6 +24,7 @@ mod mem;
 use r_efi::efi;
 use r_efi::efi::{Status};
 
+#[cfg(not(test))]
 extern {
   fn AllocatePool (Size: usize) -> *mut c_void;
   fn FreePool (Buffer: *mut c_void);
@@ -40,7 +40,10 @@ use core::slice;
 use core::slice::from_raw_parts;
 use core::slice::from_raw_parts_mut;
 
+#[cfg(not(test))]
 extern crate uefi_rust_panic_lib;
+
+#[cfg(not(test))]
 extern crate uefi_rust_allocation_lib;
 
 extern crate alloc;
@@ -48,7 +51,7 @@ extern crate alloc;
 use alloc::vec::Vec;
 use alloc::boxed::Box;
 use alloc::{
-    alloc::{handle_alloc_error, Global, Layout},
+    alloc::{handle_alloc_error, Global, Layout, AllocRef},
 };
 
 
@@ -106,10 +109,12 @@ pub extern fn test_integer_cast (
     data_size
 }
 
+#[cfg(not(test))]
 extern {
   fn ExternInit(Data: *mut usize);
 }
 
+#[cfg(not(test))]
 #[no_mangle]
 #[export_name = "TestUninitializedVariable"]
 pub extern fn test_uninitializd_variable (
@@ -187,6 +192,7 @@ pub extern fn test_buffer_overflow_fixed (
       );
 }
 
+#[cfg(not(test))]
 fn get_buffer<'a> () -> Option<&'a mut TestTableFixed>
 {
     let ptr : *mut c_void = unsafe { AllocatePool (size_of::<TestTableFixed>()) };
@@ -197,16 +203,18 @@ fn get_buffer<'a> () -> Option<&'a mut TestTableFixed>
     Some(buffer)
 }
 
+#[cfg(not(test))]
 fn release_buffer (test_table : &mut TestTableFixed)
 {
   test_table.r#type = 0;
   unsafe { FreePool (test_table as *mut TestTableFixed as *mut c_void) ; }
 }
 
+#[cfg(not(test))]
 #[no_mangle]
 #[export_name = "TestBufferDrop"]
 pub extern fn test_buffer_drop (
-    
+
     )
 {
     match get_buffer () {
@@ -238,13 +246,13 @@ pub extern fn test_buffer_borrow (
 #[no_mangle]
 #[export_name = "TestBufferAlloc"]
 pub extern fn test_buffer_alloc (
-    
+
     )
 {
     let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(32, 4) };
     unsafe {
       match Global.alloc (layout) {
-        Ok(buffer) => {
+        Ok((buffer, alloc_size)) => {
           let mut box_buffer = Box::from_raw(from_raw_parts_mut(buffer.as_ptr(), layout.size()));
           box_buffer[0] = 1;
           Global.dealloc (buffer, layout);
@@ -258,7 +266,7 @@ pub extern fn test_buffer_alloc (
     let layout = core::alloc::Layout::new::<u32>();
     unsafe {
       match Global.alloc (layout) {
-        Ok(buffer) => {
+        Ok((buffer, alloc_size)) => {
           Global.dealloc (buffer, layout);
         },
         Err(_) => handle_alloc_error (layout),
@@ -325,7 +333,7 @@ pub extern fn test_box_convert (
     let layout = unsafe { core::alloc::Layout::from_size_align_unchecked(size, 4) };
     unsafe {
       match Global.alloc (layout) {
-        Ok(buffer) => {
+        Ok((buffer, alloc_size)) => {
           let mut box_buffer = Box::<u8>::from_raw(from_raw_parts_mut(buffer.as_ptr(), layout.size()) as *mut [u8] as *mut u8 );
           Global.dealloc (buffer, layout);
           *box_buffer = 1;
