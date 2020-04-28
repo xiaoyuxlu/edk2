@@ -114,6 +114,7 @@ pub struct DirectoryEntry {
     pub size: u32,
     pub cluster: u32,
     pub long_name: [u16; MAX_FILE_NAME_LEN],
+    pub attr: u8,
 }
 
 #[derive(Debug, PartialEq)]
@@ -136,6 +137,7 @@ pub struct OFileDirectory<'a> {
     pub dir_ent: DirectoryEntry,
     pub file: Option<File<'a>>,
     pub dir: Option<Directory<'a>>,
+    pub pdir_ent: Option<DirectoryEntry>,
 }
 
 impl<'a> OFileDirectory<'a> {
@@ -144,7 +146,29 @@ impl<'a> OFileDirectory<'a> {
         file: Option<File<'a>>,
         dir: Option<Directory<'a>>,
     ) -> OFileDirectory<'a> {
-        OFileDirectory { dir_ent, file, dir }
+        let pdir_ent = None;
+        OFileDirectory { dir_ent, file, dir, pdir_ent}
+    }
+
+    pub fn get_parent_dir_ent(&self) -> Result<DirectoryEntry, Error> {
+        if self.dir.is_none() {
+            log!("current is file");
+            return Err(Error::NotFound);
+        }
+
+        let mut dir = self.dir.unwrap();
+        dir.reset();
+        loop {
+            let res = dir.next_entry();
+            match res {
+                Ok(de) => {
+                    if compare_name("..", &de) {
+                        return Ok(de);
+                    }
+                }
+                Err(err) => { return Err(err) }
+            }
+        }
     }
 }
 
@@ -215,7 +239,7 @@ impl<'a> Directory<'a> {
             let mut data: [u8; 512] = [0; 512];
             match self.filesystem.read(u64::from(sector), &mut data) {
                 Ok(_) => {}
-                Err(_) => return Err(Error::BlockError),
+                Err(_) => {log!("next_entry: block error");return Err(Error::BlockError);},
             };
 
             let dirs: &[FatDirectory] = unsafe {
@@ -263,6 +287,7 @@ impl<'a> Directory<'a> {
                     cluster: (u32::from(d.cluster_high)) << 16 | u32::from(d.cluster_low),
                     size: d.size,
                     long_name: long_entry,
+                    attr: d.flags,
                 };
 
                 self.offset = i + 1;
@@ -296,26 +321,6 @@ impl<'a> Directory<'a> {
             self.sector
         };
         Ok(sector)
-    }
-
-    pub fn get_parent_dir_ent(&self) -> Result<DirectoryEntry, Error> {
-        let mut dir = *self;
-        dir.cluster = dir.cluster_start;
-        dir.offset = 0;
-        dir.sector = 0;
-        loop {
-            let res = dir.next_entry();
-            match res {
-                Ok(de) => {
-                    if compare_name("..", &de) {
-                        return Ok(de);
-                    }
-                }
-                Err(Error::EndOfFile) => {}
-                Err(e) => {}
-            }
-        }
-        Err(Error::NotFound)
     }
 
     pub fn reset(&mut self) {
@@ -426,14 +431,18 @@ impl<'a> SectorRead for Filesystem<'a> {
 // Do a case-insensitive match on the name with the 8.3 format that you get from FAT.
 // In the FAT directory entry the "." isn't stored and any gaps are padded with " ".
 fn compare_short_name(name: &str, de: &DirectoryEntry) -> bool {
-    let short_name = de.name;
-
-    for (i, v) in name.bytes().enumerate() {
-        if (short_name[i] != v) {
-            return false;
+    let mut len = 0usize;
+    for i in de.name.iter() {
+        if *i == 0 {
+            break;
         }
+        len += 1;
     }
-    return true;
+    let short_name = &de.name[0..len];
+
+    let short_name = unsafe{core::str::from_utf8_unchecked(short_name)};
+
+    short_name == name
 }
 
 fn compare_name(name: &str, de: &DirectoryEntry) -> bool {
@@ -611,6 +620,7 @@ impl<'a> Filesystem<'a> {
                     file_type: crate::fat::FileType::Directory,
                     cluster: 0,
                     size: 0,
+                    attr: 0x30,
                     long_name: [0; MAX_FILE_NAME_LEN],
                 };
                 Ok(OFileDirectory::new(
@@ -631,6 +641,7 @@ impl<'a> Filesystem<'a> {
                     file_type: crate::fat::FileType::Directory,
                     cluster: self.root_cluster,
                     size: 0,
+                    attr: 0x30,
                     long_name: [0; MAX_FILE_NAME_LEN],
                 };
                 Ok(OFileDirectory::new(
@@ -674,6 +685,30 @@ impl<'a> Filesystem<'a> {
     }
 
     pub fn open(&self, pfile_in: &OFileDirectory<'a>, path: &str) -> Result<OFileDirectory, Error> {
+        if path == "." {
+            let mut res = (*pfile_in);
+            // res.reset();
+            return Ok(res);
+        }
+
+        if path == ".." {
+            let pdir = pfile_in.get_parent_dir_ent()?;
+            if pdir.file_type == FileType::Directory {
+                if pdir.cluster == 0 {
+                    // let dir = self.root().unwrap().dir.unwrap();
+                    // let dir_ent = self.root().unwrap().dir_ent;
+                    // return Ok(OFileDirectory::new(dir_ent, None, Some(dir)));
+                    return Ok(self.root().unwrap());
+                }else{
+                    let dir = self.get_directory(pdir.cluster).unwrap();
+                    let pdir_int = pfile_in.pdir_ent.unwrap();
+                    return Ok(OFileDirectory::new(pdir_int, None, Some(dir)));
+                }
+            } else {
+                return Err(Error::BlockError);
+            }
+        }
+
         let mut path = &path[..];
         let mut pfile = &self.root().unwrap();
         if path.find('/').or_else(|| path.find('\\')) != Some(0) {
@@ -691,12 +726,14 @@ impl<'a> Filesystem<'a> {
         let mut current_dir = pfile.dir.expect("pfile.dir is not exist");
         current_dir.reset();
         let mut current_directory_entry = pfile.dir_ent;
+        let mut pdir_ent = None;
 
         loop {
             // sub is the directory or file name
             // residual is what is left
             if residual.len() == 0 {
-                let ofile = OFileDirectory::new(current_directory_entry, None, Some(current_dir));
+                let mut ofile = OFileDirectory::new(current_directory_entry, None, Some(current_dir));
+                ofile.pdir_ent = pdir_ent;
                 return Ok(ofile);
             }
 
@@ -734,8 +771,10 @@ impl<'a> Filesystem<'a> {
                                     if de.cluster == 0 {
                                         current_dir = self.root().unwrap().dir.unwrap();
                                         current_directory_entry = self.root().unwrap().dir_ent;
+                                        pdir_ent = None;
                                     } else {
                                         current_dir = self.get_directory(de.cluster).unwrap();
+                                        pdir_ent = Some(current_directory_entry);
                                         current_directory_entry = de;
                                     }
                                     break;
@@ -761,8 +800,8 @@ impl fmt::Display for Filesystem<'_> {
         write!(
             f,
             "Filesystem:
-        start: {:?}
-        last: {:?}
+        start: {:X}
+        last: {:X}
         bytes_per_sectors: {:?}
         sectors: {:?}
         fay_type: {:?}
@@ -810,8 +849,8 @@ impl fmt::Display for DirectoryEntry {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(
             f,
-            "Directory:[cluster: {:?} name: {:?} ]",
-            self.cluster, self.name
+            "{:?}: cluster: {:?} name: {:?}, long_name: {}",
+            self.file_type, self.cluster, core::str::from_utf8(&self.name), OsStr::from_u16_slice_with_nul(& self.long_name)
         )
     }
 }
@@ -846,8 +885,6 @@ mod tests {
         }
 
         println!("fs is: {}\n {}", fs, root_dir);
-        assert!(false);
-        assert_eq!(1, 1)
     }
 
     #[test]
@@ -866,9 +903,11 @@ mod tests {
                 let mut fs = crate::fat::Filesystem::new(&d, start, end, part_id);
                 fs.init().expect("failed");
                 let mut root_dir = fs.root().expect("no root");
-                let mut efi_dir = fs.open(&root_dir, "\\EFI").unwrap();
+                let mut efi_dir = fs.open(&root_dir, "\\EFI\\BOOT").unwrap();
+                let mut boot_dir = fs.open(&efi_dir, "..").unwrap();
+                log!("boot dir: {}, {}", boot_dir.dir_ent, boot_dir.dir.unwrap());
 
-                let mut root_dir2 = fs.open(&efi_dir, "..").unwrap().dir.unwrap();
+                let mut root_dir = fs.open(&efi_dir, "..\\..").unwrap();
 
                 let mut boot_dir = fs.open(&root_dir, "\\EFI\\BOOT").unwrap().dir.unwrap();
                 loop {
@@ -879,9 +918,44 @@ mod tests {
                     println!("entry: {}", entry.unwrap());
                 }
                 let mut bootx64 = fs.open(&root_dir, "\\EFI\\BOOT\\BOOTX64.EFI").unwrap().file.unwrap();
-                log!("file is {}", bootx64.get_size());
+                println!("file is {}", bootx64.get_size());
 
-                assert!(false)
+                let mut loader_conf = fs.open(&root_dir, "\\loader\\loader.conf").unwrap().file.unwrap();
+
+                let mut data = [0u8;512];
+                let bytes_read:usize = loader_conf.read(&mut data[..]).unwrap() as usize;
+
+                println!("inf: {:?}, read imformation {:?} {:?}", loader_conf.get_size(), bytes_read, core::str::from_utf8(&data[0..bytes_read]));
+
+                let mut loader_conf = fs.open(&root_dir, "\\loader\\loader.conf").unwrap();
+                let mut entries_dir_o = fs.open(&loader_conf, "\\loader\\entries").unwrap();
+                println!("ofile.dir_ent is: {}", entries_dir_o.dir_ent);
+                let mut entries_dir = entries_dir_o.dir.as_mut().unwrap();
+                loop {
+                    let entry = entries_dir.next_entry();
+                    if entry.is_err() {
+                        break;
+                    }
+                    println!("entry: {}", entry.unwrap());
+                }
+
+                let mut bootx = fs.open(&root_dir, "\\EFI\\BOOT\\BOOTX64.EFI").unwrap();
+                println!("ofile.dir_ent2 is: {}", bootx.dir_ent);
+
+                let mut clear_linux_conf = fs.open(&root_dir, "loader\\entries\\Clear-linux-kvm-5.5.5-429.conf").unwrap();
+                let mut data = [0u8;512];
+                use crate::fat::Read;
+                let len = clear_linux_conf.file.unwrap().read(&mut data[..]).unwrap() as usize;
+
+                let info = core::str::from_utf8(&data[0..len]).unwrap();
+                println!("clear_linux_conf is: {}, info is {:?}", clear_linux_conf.dir_ent, info);
+
+                let content = "title Clear Linux OS\nlinux /EFI/org.clearlinux/kernel-org.clearlinux.kvm.5.5.5-429\noptions root=PARTUUID=b94c844c-a314-4205-a5a3-f4fbaa4b6a7b quiet console=hvc0 console=tty0 console=ttyS0,115200n8 cryptomgr.notests init=/usr/lib/systemd/systemd-bootchart initcall_debug no_timer_check noreplace-smp page_alloc.shuffle=1 rootfstype=ext4,btrfs,xfs tsc=reliable rw \n";
+                assert_eq!(content, info);
+
+                assert!(root_dir.get_parent_dir_ent().is_err());
+
+                assert_eq!(fs.open(&root_dir, "..").err().unwrap(), crate::fat::Error::EndOfFile);
             }
             Err(e) => panic!(e),
         }
@@ -891,11 +965,12 @@ mod tests {
     fn test_get_short_name() {
         let short_name = [66, 79, 79, 84, 88, 54, 52, 0x20, 0x45, 0x46, 0x49];
         let short_name2 = [66, 79, 79, 84, 88, 54, 52, 66, 0x45, 0x46, 0x49];
+        let short_name_ok = [66, 79, 79, 84, 88, 54, 52, '.' as u8, 0x45, 0x46, 0x49, 0x0];
+        let short_name2_ok = [66, 79, 79, 84, 88, 54, 52, 66, '.' as u8, 0x45, 0x46, 0x49];
 
         let s = crate::fat::get_short_name(&short_name);
-        println!("shorname: {:?}", s);
+        assert_eq!(s, short_name_ok);
         let s = crate::fat::get_short_name(&short_name2);
-        println!("shorname: {:?}", s);
-        assert!(false);
+        assert_eq!(s, short_name2_ok);
     }
 }

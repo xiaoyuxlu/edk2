@@ -48,10 +48,11 @@ impl core::fmt::Debug for FileInfo {
         unsafe {
             write!(
                 f,
-                "FInfo: fsize: {}, attr: {:x}, fname: {}",
+                "size: {}, file_size: {}, filename: {}, attr: {:x}",
+                self.size,
                 self.file_size,
-                self.attribute,
-                OsStr::from_char16_with_nul(&self.file_name[..] as *const [u16] as *const u16)
+                OsStr::from_char16_with_nul(&self.file_name[..] as *const [u16] as *const u16),
+                self.attribute
             )
         }
     }
@@ -186,12 +187,9 @@ pub extern "win64" fn open(
         let mut file_out_wrapper: Result<*mut FileWrapper, Status> = Err(Status::SUCCESS);
 
         if path.as_str() == ".."
-            && wrapper.ofile.dir.is_none()
-            && wrapper.ofile.dir.unwrap().get_parent_dir_ent().is_err()
+            && wrapper.ofile.get_parent_dir_ent().is_err()
         {
             file_out_wrapper = Err(Status::INVALID_PARAMETER);
-        } else if path.as_str() == "." || path.as_str() == "\\" {
-            file_out_wrapper = fs_wrapper.create_file(&wrapper.ofile);
         } else {
             match wrapper.fs.open(&wrapper.ofile, &path[..]) {
                 Ok(f) => {
@@ -217,7 +215,7 @@ pub extern "win64" fn open(
         }
 
         log!(
-            "open - status: {:x} - path: {}, file_in: {:x}, file_out: {:x}",
+            "FSOpen: Status: {:x} PATH: {} IN_FILE: {:x}, OUT_FILE: {:x}",
             status.value(),
             path_os,
             file_in as u64,
@@ -241,36 +239,65 @@ pub extern "win64" fn delete(_: *mut FileProtocol) -> Status {
     Status::UNSUPPORTED
 }
 
+pub fn read_file(file: &mut crate::fat::File, buf: &mut [u8]) -> Result<usize, Status> {
+    let mut bytes_remaining = buf.len();
+    let mut current_offset = 0;
+    use crate::fat::Read;
+    let mut status = Status::SUCCESS;
+    while bytes_remaining > 0 {
+        let mut data: [u8; 512] = [0; 512];
+        match file.read(&mut data) {
+            Ok(bytes_read) => {
+                let mut can_copy_bytes = bytes_read as usize;
+                can_copy_bytes = bytes_read as usize;
+
+                if can_copy_bytes > bytes_remaining {
+                    can_copy_bytes = bytes_remaining;
+                }
+                buf[current_offset..current_offset+can_copy_bytes].copy_from_slice(&data[0..can_copy_bytes]);
+                bytes_remaining -= can_copy_bytes;
+                current_offset += can_copy_bytes;
+            }
+            Err(crate::fat::Error::EndOfFile) => {
+                if current_offset == 0 {
+                    status = Status::END_OF_FILE;
+                } else {
+                    status = Status::SUCCESS;
+                }
+                break;
+            }
+            Err(_) => {
+                status = Status::DEVICE_ERROR;
+            }
+        }
+    }
+
+    if status.is_error() {
+        return Err(status);
+    }
+    Ok(current_offset)
+}
+
 pub extern "win64" fn read(file: *mut FileProtocol, size: *mut usize, buf: *mut c_void) -> Status {
     unsafe {
         // log!("read called {:?} {:?}", file, size);
         let old_size = *size;
         let wrapper = container_of_mut!(file, FileWrapper, proto);
         let wrapper: &mut FileWrapper = &mut (*wrapper);
+        let mut status = Status::SUCCESS;
         match wrapper.ofile.dir_ent.file_type {
             crate::fat::FileType::File => {
                 let mut file = wrapper.ofile.file.as_mut().unwrap();
-                let mut current_offset = 0;
-                let mut bytes_remaining = *size;
-                loop {
-                    use crate::fat::Read;
-                    let buf = unsafe { core::slice::from_raw_parts_mut(buf as *mut u8, *size) };
-                    let mut data: [u8; 512] = [0; 512];
-                    match file.read(&mut data) {
-                        Ok(bytes_read) => {
-                            buf[current_offset..current_offset + bytes_read as usize]
-                                .copy_from_slice(&data[0..bytes_read as usize]);
-                            current_offset += bytes_read as usize;
-
-                            if bytes_remaining <= bytes_read as usize {
-                                *size = current_offset;
-                                return Status::SUCCESS;
-                            }
-                            bytes_remaining -= bytes_read as usize;
-                        }
-                        Err(_) => {
-                            return Status::DEVICE_ERROR;
-                        }
+                let mut buf = core::slice::from_raw_parts_mut(buf as *mut u8, *size);
+                let res = read_file(file, &mut buf);
+                match res {
+                    Ok(bytes_read) => {
+                        status = Status::SUCCESS;
+                        *size = bytes_read;
+                    }
+                    Err(err) => {
+                        *size = 0;
+                        status = err;
                     }
                 }
             }
@@ -283,60 +310,54 @@ pub extern "win64" fn read(file: *mut FileProtocol, size: *mut usize, buf: *mut 
                         (*info).attribute = 0;
                         (*info).file_name[0] = 0;
                         (*size) = 0;
-                        let status = Status::SUCCESS;
-                        log!(
-                            "read -  status: {:x}, file: {:x}, info: {:?}",
-                            status.value(),
-                            file as u64,
-                            *info
-                        );
-                        return status;
+                        status = Status::SUCCESS;
                     }
                     Err(e) => {
-                        let status = Status::DEVICE_ERROR;
-                        log!(
-                            "read -  status: {:x}, file: {:x}, info: {:?}",
-                            status.value(),
-                            file as u64,
-                            *info
-                        );
-                        return status;
+                        status = Status::DEVICE_ERROR;
                     }
                     Ok(de) => {
                         let mut long_name = de.long_name;
                         if long_name[0] == 0 {
-                            for i in 0..11 {
+                            for i in 0..12 {
                                 long_name[i] = de.name[i] as u16;
                             }
                         }
-
                         (*info).file_name = long_name;
+                        let mut name_len = OsStr::from_u16_slice_with_nul(&long_name[..]).len();
+                        for i in 0..name_len {
+                            (*info).file_name[i] = long_name[i];
+                        }
+                        (*info).file_name[name_len] = 0;
+                        (*size) = (core::mem::size_of::<FileInfo>() - 260*2 + name_len*2) as usize;
+                        (*info).attribute = wrapper.ofile.dir_ent.attr as u64;
                         match de.file_type {
                             crate::fat::FileType::File => {
-                                (*info).size = core::mem::size_of::<FileInfo>() as u64;
+                                (*info).size = (*size) as u64;
                                 (*info).file_size = de.size.into();
                                 (*info).physical_size = de.size.into();
-                                (*info).attribute = 0x20;
                             }
                             crate::fat::FileType::Directory => {
-                                (*info).size = core::mem::size_of::<FileInfo>() as u64;
+                                (*info).size = (*size) as u64;
                                 (*info).file_size = 4096;
                                 (*info).physical_size = 4096;
-                                (*info).attribute = 0x10;
                             }
                         }
-                        let status = Status::SUCCESS;
-                        log!(
-                            "read -  status: {:x}, file: {:x}, info: {:?}",
-                            status.value(),
-                            file as u64,
-                            *info
-                        );
-                        return status;
+                        status = Status::SUCCESS;
                     }
                 }
+
+
+
             }
         }
+        log!(
+            "FRead: Status: {:X}, FILE: {:X}, size: {}, new_size: {:?}",
+            status.value(),
+            file as u64,
+            old_size,
+            *size
+        );
+        status
     }
 }
 
@@ -350,9 +371,9 @@ pub extern "win64" fn get_position(_: *mut FileProtocol, _: *mut u64) -> Status 
     Status::UNSUPPORTED
 }
 
-pub extern "win64" fn set_position(_: *mut FileProtocol, _: u64) -> Status {
+pub extern "win64" fn set_position(_file_in: *mut FileProtocol, _pos: u64) -> Status {
     // TODO: set position for opened file and opend directory.
-    // crate::log!("set_position todo\n");
+    // crate::log!("set_position: file {:X}, pos {}", file_in as u64, pos);
     Status::SUCCESS
 }
 
@@ -374,31 +395,39 @@ pub extern "win64" fn get_info(
                 use crate::fat::Read;
                 let mut long_name = wrapper.ofile.dir_ent.long_name;
                 if long_name[0] == 0 {
-                    for i in 0..11 {
+                    for i in 0..12 {
                         long_name[i] = wrapper.ofile.dir_ent.name[i] as u16;
                     }
                 }
 
-                (*info).file_name = long_name;
+                //(*info).file_name = long_name;
+                let mut name_len = OsStr::from_u16_slice_with_nul(&long_name[..]).len();
+                for i in 0..name_len {
+                    (*info).file_name[i] = long_name[i];
+                }
+                (*info).file_name[name_len] = 0;
+                (*info).size = (core::mem::size_of::<FileInfo>() - 260*2 + name_len*2) as u64;
+                (*info).attribute = wrapper.ofile.dir_ent.attr as u64;
                 match wrapper.ofile.dir_ent.file_type {
                     crate::fat::FileType::File => {
-                        (*info).size = core::mem::size_of::<FileInfo>() as u64;
                         let file = wrapper
                             .fs
                             .get_file(wrapper.ofile.dir_ent.cluster, wrapper.ofile.dir_ent.size)
                             .expect("error");
                         (*info).file_size = file.get_size().into();
                         (*info).physical_size = file.get_size().into();
-                        (*info).attribute = 0x20;
                     }
                     crate::fat::FileType::Directory => {
-                        (*info).size = core::mem::size_of::<FileInfo>() as u64;
-                        (*info).file_size = 4096;
-                        (*info).physical_size = 4096;
-                        (*info).attribute = 0x10;
+                        if(*info).file_name[0] == 0 {
+                            (*info).file_size = 0;
+                            (*info).physical_size = 0;
+                        }else{
+                            (*info).file_size = 4096;
+                            (*info).physical_size = 4096;
+                        }
                     }
                 }
-                log!("get_info - file_in: {:x} info: {:?}", file as u64, &*info);
+                log!("FGetInfo: file_in: {:x}, {:?}", file as u64, &*info);
                 Status::SUCCESS
             }
         } else {
