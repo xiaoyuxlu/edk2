@@ -322,14 +322,17 @@ pub extern "win64" fn read(file: *mut FileProtocol, size: *mut usize, buf: *mut 
                                 long_name[i] = de.name[i] as u16;
                             }
                         }
-                        (*info).file_name = long_name;
-                        let mut name_len = OsStr::from_u16_slice_with_nul(&long_name[..]).len();
+                        let filename = OsStr::from_u16_slice_with_nul(&long_name[..]);
+                        let mut name_len = filename.len();
+                        (*size) = (core::mem::size_of::<FileInfo>() - 260*2 + name_len*2) as usize;
+                        if (old_size < *size) {
+                            return Status::BUFFER_TOO_SMALL;
+                        }
                         for i in 0..name_len {
                             (*info).file_name[i] = long_name[i];
                         }
                         (*info).file_name[name_len] = 0;
-                        (*size) = (core::mem::size_of::<FileInfo>() - 260*2 + name_len*2) as usize;
-                        (*info).attribute = wrapper.ofile.dir_ent.attr as u64;
+                        (*info).attribute = de.attr as u64;
                         match de.file_type {
                             crate::fat::FileType::File => {
                                 (*info).size = (*size) as u64;
