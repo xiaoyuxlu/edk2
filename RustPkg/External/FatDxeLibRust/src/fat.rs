@@ -18,7 +18,8 @@ use crate::block::SectorRead;
 use core::fmt;
 use efi_str::OsStr;
 
-const MAX_FILE_NAME_LEN: usize = 261;
+pub const EFI_PATH_STRING_LENGTH: usize = 260;
+pub const EFI_FAT_SHORT_NAME_LEN: usize = 11;
 
 #[repr(packed)]
 struct Header {
@@ -58,7 +59,7 @@ struct Fat32Header {
 
 #[repr(packed)]
 struct FatDirectory {
-    name: [u8; 11],
+    name: [u8; EFI_FAT_SHORT_NAME_LEN],
     flags: u8,
     _unused1: [u8; 8],
     cluster_high: u16,
@@ -109,11 +110,11 @@ pub struct Filesystem<'a> {
 
 #[derive(Clone, Copy)]
 pub struct DirectoryEntry {
-    pub name: [u8; 12],
+    pub name: [u8; EFI_FAT_SHORT_NAME_LEN + 1],
     pub file_type: FileType,
     pub size: u32,
     pub cluster: u32,
-    pub long_name: [u16; MAX_FILE_NAME_LEN],
+    pub long_name: [u16; EFI_PATH_STRING_LENGTH],
     pub attr: u8,
 }
 
@@ -191,10 +192,10 @@ pub struct Directory<'a> {
     cluster_start: Option<u32>,
 }
 
-fn get_short_name(input: &[u8; 11]) -> [u8; 12] {
+fn get_short_name(input: &[u8; EFI_FAT_SHORT_NAME_LEN]) -> [u8; EFI_FAT_SHORT_NAME_LEN + 1] {
     let mut index = 0;
     let mut i = 0;
-    let mut name_vec: [u8; 12] = [0; 12];
+    let mut name_vec: [u8; EFI_FAT_SHORT_NAME_LEN + 1] = [0; EFI_FAT_SHORT_NAME_LEN + 1];
 
     let get_len = |vec: &[u8]|{
         let mut len = 0;
@@ -232,7 +233,7 @@ fn get_short_name(input: &[u8; 11]) -> [u8; 12] {
 impl<'a> Directory<'a> {
     // Returns and then increments to point to the next one, may return EndOfFile if this is the last entry
     pub fn next_entry(&mut self) -> Result<DirectoryEntry, Error> {
-        let mut long_entry = [0u16; MAX_FILE_NAME_LEN];
+        let mut long_entry = [0u16; EFI_PATH_STRING_LENGTH];
         loop {
             let sector = self.get_sector()?;
 
@@ -616,12 +617,12 @@ impl<'a> Filesystem<'a> {
             FatType::FAT12 | FatType::FAT16 => {
                 let root_directory_start = self.first_data_sector - self.root_dir_sectors;
                 let mut entry = crate::fat::DirectoryEntry {
-                    name: [0; 12],
+                    name: [0; EFI_FAT_SHORT_NAME_LEN + 1],
                     file_type: crate::fat::FileType::Directory,
                     cluster: 0,
                     size: 0,
                     attr: 0x30,
-                    long_name: [0; MAX_FILE_NAME_LEN],
+                    long_name: [0; EFI_PATH_STRING_LENGTH],
                 };
                 Ok(OFileDirectory::new(
                     entry,
@@ -637,12 +638,12 @@ impl<'a> Filesystem<'a> {
             }
             FatType::FAT32 => {
                 let mut entry = crate::fat::DirectoryEntry {
-                    name: [0; 12],
+                    name: [0; EFI_FAT_SHORT_NAME_LEN + 1],
                     file_type: crate::fat::FileType::Directory,
                     cluster: self.root_cluster,
                     size: 0,
                     attr: 0x30,
-                    long_name: [0; MAX_FILE_NAME_LEN],
+                    long_name: [0; EFI_PATH_STRING_LENGTH],
                 };
                 Ok(OFileDirectory::new(
                     entry,
