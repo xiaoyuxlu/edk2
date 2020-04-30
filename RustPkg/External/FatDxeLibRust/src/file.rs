@@ -40,22 +40,7 @@ struct FileInfo {
     _last_access_time: r_efi::system::Time,
     _modification_time: r_efi::system::Time,
     attribute: u64,
-    file_name: [Char16; 261],
-}
-
-impl core::fmt::Debug for FileInfo {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        unsafe {
-            write!(
-                f,
-                "size: {}, file_size: {}, filename: {}, attr: {:x}",
-                self.size,
-                self.file_size,
-                OsStr::from_char16_with_nul(&self.file_name[..] as *const [u16] as *const u16),
-                self.attribute
-            )
-        }
-    }
+    file_name: [Char16; crate::fat::EFI_PATH_STRING_LENGTH],
 }
 
 pub struct FileSystemWrapper<'a> {
@@ -141,6 +126,58 @@ impl<'a> FileSystemWrapper<'a> {
         };
         let mut fp = crate::calloc::duplicate(&file_system_path)?;
         Ok(fp as *mut c_void)
+    }
+}
+
+impl core::fmt::Debug for FileInfo {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        unsafe {
+            write!(
+                f,
+                "size: {}, file_size: {}, filename: {}, attr: {:x}",
+                self.size,
+                self.file_size,
+                OsStr::from_char16_with_nul(&self.file_name[..] as *const [u16] as *const u16),
+                self.attribute
+            )
+        }
+    }
+}
+
+impl FileInfo {
+    pub fn init(&mut self, de: crate::fat::DirectoryEntry, max_size: usize) -> Result<usize, usize> {
+        let mut size = 0usize;
+
+        let mut long_name = de.long_name;
+        if long_name[0] == 0 {
+            for i in 0..(crate::fat::EFI_FAT_SHORT_NAME_LEN + 1) {
+                long_name[i] = de.name[i] as u16;
+            }
+        }
+        let filename = OsStr::from_u16_slice_with_nul(&long_name[..]);
+        let mut name_len = filename.len();
+        size = (core::mem::size_of::<FileInfo>() - crate::fat::EFI_PATH_STRING_LENGTH * core::mem::size_of::<Char16>() + (name_len + 1) * core::mem::size_of::<Char16>()) as usize;
+        if (max_size < size) {
+            return Err(size);
+        }
+        for i in 0..name_len {
+            self.file_name[i] = long_name[i];
+        }
+        self.file_name[name_len] = 0;
+        self.attribute = de.attr as u64;
+        match de.file_type {
+            crate::fat::FileType::File => {
+                self.size = size as u64;
+                self.file_size = de.size.into();
+                self.physical_size = de.size.into();
+            }
+            crate::fat::FileType::Directory => {
+                self.size = size as u64;
+                self.file_size = 4096;
+                self.physical_size = 4096;
+            }
+        }
+        Ok(size)
     }
 }
 
@@ -316,41 +353,13 @@ pub extern "win64" fn read(file: *mut FileProtocol, size: *mut usize, buf: *mut 
                         status = Status::DEVICE_ERROR;
                     }
                     Ok(de) => {
-                        let mut long_name = de.long_name;
-                        if long_name[0] == 0 {
-                            for i in 0..12 {
-                                long_name[i] = de.name[i] as u16;
-                            }
+                        let ret = (*info).init(de, *size);
+                        match ret {
+                            Ok(total_size) => { *size = total_size; status = Status::SUCCESS;}
+                            Err(need_size) => { *size = need_size; status = Status::BUFFER_TOO_SMALL;}
                         }
-                        let filename = OsStr::from_u16_slice_with_nul(&long_name[..]);
-                        let mut name_len = filename.len();
-                        (*size) = (core::mem::size_of::<FileInfo>() - 260*2 + name_len*2) as usize;
-                        if (old_size < *size) {
-                            return Status::BUFFER_TOO_SMALL;
-                        }
-                        for i in 0..name_len {
-                            (*info).file_name[i] = long_name[i];
-                        }
-                        (*info).file_name[name_len] = 0;
-                        (*info).attribute = de.attr as u64;
-                        match de.file_type {
-                            crate::fat::FileType::File => {
-                                (*info).size = (*size) as u64;
-                                (*info).file_size = de.size.into();
-                                (*info).physical_size = de.size.into();
-                            }
-                            crate::fat::FileType::Directory => {
-                                (*info).size = (*size) as u64;
-                                (*info).file_size = 4096;
-                                (*info).physical_size = 4096;
-                            }
-                        }
-                        status = Status::SUCCESS;
                     }
                 }
-
-
-
             }
         }
         log!(
@@ -394,44 +403,15 @@ pub extern "win64" fn get_info(
                 *info_size = core::mem::size_of::<FileInfo>();
                 Status::BUFFER_TOO_SMALL
             } else {
+                let mut status;
                 let info = info as *mut FileInfo;
-                use crate::fat::Read;
-                let mut long_name = wrapper.ofile.dir_ent.long_name;
-                if long_name[0] == 0 {
-                    for i in 0..12 {
-                        long_name[i] = wrapper.ofile.dir_ent.name[i] as u16;
-                    }
-                }
-
-                //(*info).file_name = long_name;
-                let mut name_len = OsStr::from_u16_slice_with_nul(&long_name[..]).len();
-                for i in 0..name_len {
-                    (*info).file_name[i] = long_name[i];
-                }
-                (*info).file_name[name_len] = 0;
-                (*info).size = (core::mem::size_of::<FileInfo>() - 260*2 + name_len*2) as u64;
-                (*info).attribute = wrapper.ofile.dir_ent.attr as u64;
-                match wrapper.ofile.dir_ent.file_type {
-                    crate::fat::FileType::File => {
-                        let file = wrapper
-                            .fs
-                            .get_file(wrapper.ofile.dir_ent.cluster, wrapper.ofile.dir_ent.size)
-                            .expect("error");
-                        (*info).file_size = file.get_size().into();
-                        (*info).physical_size = file.get_size().into();
-                    }
-                    crate::fat::FileType::Directory => {
-                        if(*info).file_name[0] == 0 {
-                            (*info).file_size = 0;
-                            (*info).physical_size = 0;
-                        }else{
-                            (*info).file_size = 4096;
-                            (*info).physical_size = 4096;
-                        }
-                    }
+                let ret = (*info).init(wrapper.ofile.dir_ent, *info_size);
+                match ret {
+                    Ok(total_size) => { *info_size = total_size; status = Status::SUCCESS;}
+                    Err(need_size) => { *info_size = need_size; status = Status::BUFFER_TOO_SMALL;}
                 }
                 log!("FGetInfo: file_in: {:x}, {:?}", file as u64, &*info);
-                Status::SUCCESS
+                status
             }
         } else {
             crate::log!("get_info unsupported");
