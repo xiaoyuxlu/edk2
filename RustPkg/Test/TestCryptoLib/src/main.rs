@@ -179,4 +179,26 @@ mod test {
         assert_ne!(public_key, public_key_bytes_der);
         pubkey.verify(&MESSAGE, sign.as_ref()).unwrap();
     }
+
+    #[test]
+    fn test_pki_verify_sign(){
+        use webpki::{self, EndEntityCert};
+        let cert_der = untrusted::Input::from(include_bytes!("..\\test\\pki\\rsa\\ca.der")).as_slice_less_safe();
+        let cert = EndEntityCert::from(cert_der).unwrap();
+
+        let key_bytes_der =
+        untrusted::Input::from(include_bytes!("..\\test\\pki\\rsa\\ca.key.der")).as_slice_less_safe();
+        let key_pair: signature::RsaKeyPair = signature::RsaKeyPair::from_der(key_bytes_der).unwrap();
+
+        const MESSAGE: &'static [u8] = b"hello, world";
+        let rng = rand::SystemRandom::new();
+
+        let mut sign = vec![0; key_pair.public_modulus_len()];
+        key_pair.sign(&signature::RSA_PKCS1_SHA256, &rng, &MESSAGE, &mut sign).unwrap();
+        // key_pair.sign(&signature::RSA_PSS_SHA256, &rng, &MESSAGE, &mut sign).unwrap();
+
+        //RSA_PSS_SHA256
+        cert.verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &MESSAGE, &sign).unwrap();
+        // cert.verify_signature(&webpki::RSA_PSS_2048_8192_SHA256_LEGACY_KEY, &MESSAGE, &sign).unwrap();
+    }
 }
