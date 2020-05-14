@@ -183,7 +183,7 @@ mod test {
     #[test]
     fn test_pki_verify_sign(){
         use webpki::{self, EndEntityCert};
-        let cert_der = untrusted::Input::from(include_bytes!("..\\test\\pki\\rsa\\ca.der")).as_slice_less_safe();
+        let cert_der = untrusted::Input::from(include_bytes!("..\\test\\pki\\rsa\\ca.cert.der")).as_slice_less_safe();
         let cert = EndEntityCert::from(cert_der).unwrap();
 
         let key_bytes_der =
@@ -200,5 +200,35 @@ mod test {
         //RSA_PSS_SHA256
         cert.verify_signature(&webpki::RSA_PKCS1_2048_8192_SHA256, &MESSAGE, &sign).unwrap();
         // cert.verify_signature(&webpki::RSA_PSS_2048_8192_SHA256_LEGACY_KEY, &MESSAGE, &sign).unwrap();
+    }
+
+    #[test]
+    fn test_pki_verify_cert() {
+        static ALL_SIGALGS: &[&webpki::SignatureAlgorithm] = &[
+            &webpki::ECDSA_P256_SHA256,
+            &webpki::ECDSA_P256_SHA384,
+            &webpki::ECDSA_P384_SHA256,
+            &webpki::ECDSA_P384_SHA384,
+            &webpki::RSA_PKCS1_2048_8192_SHA256,
+            &webpki::RSA_PKCS1_2048_8192_SHA384,
+            &webpki::RSA_PKCS1_2048_8192_SHA512,
+            &webpki::RSA_PKCS1_3072_8192_SHA384,
+            &webpki::ED25519,
+        ];
+
+        let ee = include_bytes!("../test/pki/rsa/end.cert.der");
+        let inter = include_bytes!("../test/pki/rsa/inter.cert.der");
+        let ca = include_bytes!("../test/pki/rsa/ca.cert.der");
+
+        let anchors = vec![webpki::trust_anchor_util::cert_der_as_trust_anchor(ca).unwrap()];
+        let anchors = webpki::TLSServerTrustAnchors(&anchors);
+
+        use std::time::{SystemTime};
+        let start = SystemTime::now();
+        let time = webpki::Time::try_from(start).unwrap();
+        let cert = webpki::EndEntityCert::from(ee).unwrap();
+        let _ = cert
+            .verify_is_valid_tls_server_cert(ALL_SIGALGS, &anchors, &[inter], time)
+            .unwrap();
     }
 }
