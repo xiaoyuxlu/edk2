@@ -28,6 +28,7 @@ from Common.caching import cached_class_function
 from AutoGen.ModuleAutoGenHelper import PlatformInfo,WorkSpaceInfo
 import json
 import tempfile
+from AutoGen.RustModuleAutoGen import RustModuleAutoGen
 
 ## Mapping Makefile type
 gMakeTypeMap = {TAB_COMPILER_MSFT:"nmake", "GCC":"gmake"}
@@ -1881,6 +1882,21 @@ class ModuleAutoGen(AutoGen):
                 RetVal.append(La)
                 for Lib in La.CodaTargetList:
                     self._ApplyBuildRule(Lib.Target, TAB_UNKNOWN_FILE)
+        return RetVal
+
+    @cached_property
+    def LibraryRustAutoGenList(self):
+        RetVal = []
+        for Library in self.DependentLibraryList:
+            if type(Library).__name__ == "TomlBuildData":
+                La = RustModuleAutoGen(
+                    self.Workspace,
+                    Library.MetaFile,
+                    self.BuildTarget,
+                    self.ToolChain, self.Arch,
+                    DataPipe=self.DataPipe)
+                if La not in RetVal:
+                    RetVal.append(La)
         return RetVal
 
     def GenCMakeHash(self):
