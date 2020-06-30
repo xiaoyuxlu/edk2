@@ -1,0 +1,29 @@
+### @file
+#
+#  Copyright (c) 2020, Intel Corporation. All rights reserved.<BR>
+#
+#  SPDX-License-Identifier: BSD-2-Clause-Patent
+#
+###
+
+[Defines]
+  INF_VERSION               = 0x00010017
+  BASE_NAME                 = TestCryptoLib
+  FILE_GUID                 = 38CA059D-22CB-4BB6-811C-0A118988B1CE
+  MODULE_TYPE               = UEFI_APPLICATION
+  ENTRY_POINT               = UEFI_Main
+
+[Sources]
+  Cargo.toml
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+
+[LibraryClasses]
+  UefiApplicationEntryPoint
+  UefiLib
+  PcdLib
+
+[BuildOptions]
+  MSFT:*_*_*_DLINK_FLAGS  =  /ALIGN:4096
