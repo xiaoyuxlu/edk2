@@ -204,6 +204,8 @@
 
   RustPkg/External/FatDxeLibRust/Fat.inf
 
+  RustPkg/Test/TestCryptoLib/TestCryptoLib.inf
+
 #[RustComponents]
 #  RustPkg/Test/HelloWorld/Cargo.toml
 #  RustPkg/Test/TestRustLangApp/Cargo.toml
