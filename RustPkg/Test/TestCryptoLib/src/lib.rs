@@ -99,6 +99,7 @@ fn test_ecdh() {
 }
 
 
+#[cfg(target_arch = "x86_64")]
 #[cfg(not(test))]
 fn test_aead() {
     use ring::aead::{NonceSequence, Nonce as OldNonce, NONCE_LEN};
@@ -283,7 +284,9 @@ pub extern fn main(_h: efi::Handle, st: *mut efi::SystemTable) -> efi::Status {
     test_sha256();
     test_hmac();
 
+    #[cfg(target_arch = "x86_64")]
     test_aead();
+
     test_rsa();
     test_ecdh();
     test_ecdsa();
