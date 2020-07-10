@@ -1,5 +1,7 @@
 #!/bin/sh
 
+unset OPENSSL_CONF
+unset OPENSSL_HOME
 rm -rf test
 mkdir -p test/rsa
 pushd test/rsa
