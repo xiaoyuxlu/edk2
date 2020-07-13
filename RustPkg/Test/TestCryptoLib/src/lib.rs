@@ -519,7 +519,11 @@ mod test {
         let anchors = vec![webpki::trust_anchor_util::cert_der_as_trust_anchor(ca).unwrap()];
         let anchors = webpki::TLSServerTrustAnchors(&anchors);
 
-        let time = webpki::Time::from_seconds_since_unix_epoch(1593482917);
+        use std::time::SystemTime;
+        let time = webpki::Time::from_seconds_since_unix_epoch(
+            SystemTime::now().duration_since(SystemTime::UNIX_EPOCH).unwrap().as_secs()
+        );
+
         let cert = webpki::EndEntityCert::from(ee).unwrap();
         let _ = cert
             .verify_is_valid_tls_server_cert(ALL_SIGALGS, &anchors, &[inter], time)
